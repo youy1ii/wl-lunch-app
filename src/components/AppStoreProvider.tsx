@@ -286,8 +286,14 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
   }, []);
 
   const updateUserProfile = useCallback((patch: Partial<IUser>) => {
-    setUser((u) => (u ? { ...u, ...patch } : u));
-  }, []);
+    setUser((u) => {
+      if (!u) return u;
+      const next = { ...u, ...patch };
+      saveSession(next, next.username === 'WLLC2026', readIds);
+      supabase.from('users').update(patch).eq('uid', next.uid || '').then(() => {});
+      return next;
+    });
+  }, [readIds]);
 
   const toggleDishNew = useCallback((id: number) => {
     setDishes((prev) => prev.map((d) => (d.id === id ? { ...d, isNew: !d.isNew } : d)));

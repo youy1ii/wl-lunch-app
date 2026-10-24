@@ -216,7 +216,7 @@ export default function DishDetailPage() {
                           {r.author}
                         </button>
                       ) : (
-                        <span className="text-xs font-bold">{r.author}</span>
+                        <span className="text-xs font-bold">{r.author}{((r.author === "admin" || r.author === "管理员" || r.mine) && isAdmin) && <span className="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-[9px] text-primary-foreground">管理员</span>}</span>
                       )}
                     </div>
                     <span

@@ -24,6 +24,10 @@ export default function MePage() {
   const { user, isAdmin, settings, setSettings, logout, dishes, followees, updateUserProfile, frames, myFrameId, setActiveFrame, profileHeader, setHeaderImage } = useApp();
   const navigate = useNavigate();
   const [showMine, setShowMine] = useState(false);
+  const [toast, setToast] = useState("");
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2000); };
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [notifOn, setNotifOn] = useState(true);
@@ -48,7 +52,7 @@ export default function MePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => updateUserProfile({ avatar: reader.result as string });
+    reader.onload = () => { updateUserProfile({ avatar: reader.result as string }); showToast('头像上传成功'); };
     reader.readAsDataURL(file);
   };
   const onPickHeader = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +106,8 @@ export default function MePage() {
           </label>
           </div>
         </div>
-        <div className="mt-3 text-lg font-black">{user?.realName ?? user?.username}</div>
+        <div className="mt-3 flex items-center justify-center gap-2 text-lg font-black">{user?.realName ?? user?.username}{isAdmin && <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">管理员</span>}</div>
+        <button type="button" className="pressable mt-0.5 text-[10px] text-muted-foreground" onClick={() => { if (user?.uid) { navigator.clipboard.writeText(user.uid); showToast("UID已复制"); } }}>UID: {user?.uid}</button>
         <div className="mt-1 text-xs text-muted-foreground">
           {user?.role === 'student' ? `${user.grade ?? ''}${user.klass ?? ''}学生` : '管理员'}
         </div>
@@ -128,7 +133,7 @@ export default function MePage() {
           type="button"
           onClick={() => {
             const b = window.prompt('个性签名（最多200字，可换行）', user?.bio ?? '');
-            if (b !== null) updateUserProfile({ bio: b.slice(0, 200) });
+            if (b !== null) { updateUserProfile({ bio: b.slice(0, 200) }); showToast('个性签名已保存'); }
           }}
           className="pressable mt-3 line-clamp-2 max-w-[260px] whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground"
           style={{
@@ -175,6 +180,31 @@ export default function MePage() {
         document.body,
       )}
 
+      {showFollowers && createPortal(
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setShowFollowers(false)}>
+          <div className="anim-rise card-solid max-h-[70%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-black">粉丝</h3>
+              <button type="button" onClick={() => setShowFollowers(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
+            </div>
+            <p className="py-8 text-center text-xs text-muted-foreground">还没有粉丝，多去评论区互动吧</p>
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {showFollowing && createPortal(
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setShowFollowing(false)}>
+          <div className="anim-rise card-solid max-h-[70%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-black">关注</h3>
+              <button type="button" onClick={() => setShowFollowing(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
+            </div>
+            {followees.length === 0 ? <p className="py-8 text-center text-xs text-muted-foreground">还没有关注任何人</p> : followees.map(u => <div key={u} className="mb-2 rounded-xl bg-muted p-3 text-xs">{u}</div>)}
+          </div>
+        </div>,
+        document.body,
+      )}
       {/* 编辑资料 / 隐私设置 */}
       <div className="card-solid mt-5 overflow-hidden rounded-2xl shadow-sm">
         <button
@@ -427,6 +457,9 @@ export default function MePage() {
         <br />
         一切解释权归属文来
       </p>
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-black/80 px-4 py-2 text-xs font-bold text-white anim-pop">{toast}</div>
+      )}
     </div>
   );
 }

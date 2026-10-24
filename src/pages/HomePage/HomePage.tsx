@@ -138,7 +138,7 @@ export default function HomePage() {
             setShowNotif((v) => !v);
             markAllNotificationsRead();
           }}
-          className="pressable relative flex h-9 w-9 items-center justify-center rounded-full bg-card shadow-sm ring-1 ring-black/5"
+          className="pressable relative flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 ring-black/5" style={{ background: 'var(--card)' }}
         >
           <Bell size={18} />
           {unread > 0 && (
@@ -151,7 +151,7 @@ export default function HomePage() {
 
       {/* 通知下拉：三类分组 */}
       {showNotif && (
-        <div className="anim-pop absolute right-4 top-16 z-40 w-72 rounded-xl bg-card p-2 shadow-xl ring-1 ring-black/10">
+        <div className="anim-pop absolute right-4 top-16 z-40 w-72 rounded-xl p-2 shadow-xl ring-1 ring-black/10" style={{ background: 'var(--card)' }}>
           {([
             { kind: 'like' as const, label: '收到的赞', color: '#FF4D6D' },
             { kind: 'reply' as const, label: '新回复', color: '#38B6FF' },
