@@ -118,7 +118,7 @@ export default function MePage() {
           </div>
           <div className="h-6 w-px bg-border" />
           <div>
-            <div className="text-lg font-black">{followees.length * 7 + 3}</div>
+            <div className="text-lg font-black">0</div>
             <div className="text-[10px] text-muted-foreground">粉丝</div>
           </div>
           <div className="h-6 w-px bg-border" />
