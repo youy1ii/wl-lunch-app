@@ -7,15 +7,17 @@
     <link rel="apple-touch-icon" href="/wl-lunch-app/icon.png" />
     <title>WL Lunch</title>
     <script>
-      // Restore SPA route from ?/ redirect
-      (function() {
-        var l = window.location;
-        if (l.search.indexOf('~and~') > -1 || l.search.indexOf('=/') > -1) {
-          var query = l.search.replace(/^\/?\?/, '').replace(/~and~/g, '&');
-          if (query.charAt(0) === '/') query = query.slice(1);
-          window.history.replaceState(null, '', l.pathname + (query ? '?' + query : '') + l.hash);
+      // SPA GitHub Pages redirect recovery
+      (function(l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, '',
+            l.pathname.slice(0, -1) + decoded + l.hash
+          );
         }
-      })();
+      }(window.location));
     </script>
     <script type="module" crossorigin src="/wl-lunch-app/assets/index-Du7Pm5hF.js"></script>
     <link rel="stylesheet" crossorigin href="/wl-lunch-app/assets/index-CNcB7kTW.css">
