@@ -6,10 +6,21 @@
     <link rel="icon" type="image/png" href="/wl-lunch-app/icon.png" />
     <link rel="apple-touch-icon" href="/wl-lunch-app/icon.png" />
     <title>WL Lunch</title>
+    <script>
+      // Restore SPA route from ?/ redirect
+      (function() {
+        var l = window.location;
+        if (l.search.indexOf('~and~') > -1 || l.search.indexOf('=/') > -1) {
+          var query = l.search.replace(/^\/?\?/, '').replace(/~and~/g, '&');
+          if (query.charAt(0) === '/') query = query.slice(1);
+          window.history.replaceState(null, '', l.pathname + (query ? '?' + query : '') + l.hash);
+        }
+      })();
+    </script>
     <script type="module" crossorigin src="/wl-lunch-app/assets/index-Du7Pm5hF.js"></script>
     <link rel="stylesheet" crossorigin href="/wl-lunch-app/assets/index-CNcB7kTW.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"></div>
   </body>
 </html>
