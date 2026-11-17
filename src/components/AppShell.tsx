@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Home, Trophy, UtensilsCrossed, UserRound } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
@@ -13,11 +14,13 @@ export default function AppShell() {
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [settling, setSettling] = useState(false);
   const location = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
   const [toast, setToast] = useState<string | null>(null);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
   const prevNotifCount = useRef(notifications.length);
 
   useEffect(() => {
-    const theme = settings.theme ?? 'light';
+    const theme = settings.theme ?? 'dark';
     document.documentElement.classList.remove('theme-light', 'theme-dark');
     if (theme !== 'system') document.documentElement.classList.add(`theme-${theme}`);
   }, [settings.theme]);
@@ -32,6 +35,24 @@ export default function AppShell() {
       prevNotifCount.current = notifications.length;
     }
   }, [notifications]);
+
+  useEffect(() => {
+    const checkUpdate = async () => {
+      try {
+        const res = await fetch('/wl-lunch-app/?_=' + Date.now(), { cache: 'no-store' });
+        const html = await res.text();
+        const match = html.match(/assets\/index-([\w-]+)\.js/);
+        if (match) {
+          const liveHash = match[1];
+          const curScript = document.querySelector('script[src*="assets/index-"]')?.getAttribute('src') || '';
+          if (!curScript.includes(liveHash)) setUpdateAvailable(true);
+        }
+      } catch {}
+    };
+    const t0 = setTimeout(checkUpdate, 3000);
+    const t1 = setInterval(checkUpdate, 60000);
+    return () => { clearTimeout(t0); clearInterval(t1); };
+  }, []);
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('black'), 1200);
@@ -53,13 +74,21 @@ export default function AppShell() {
       setSettling(true);
       setParallax({ x: 0, y: 0 });
     };
+    const onTouch = (e: TouchEvent) => {
+      if (e.touches.length === 0) return;
+      setSettling(false);
+      const t = e.touches[0];
+      setParallax({ x: (t.clientX / window.innerWidth - 0.5) * 16, y: (t.clientY / window.innerHeight - 0.5) * 16 });
+    };
     window.addEventListener('mousemove', onMove);
     document.addEventListener('mouseleave', settle);
+    window.addEventListener('touchmove', onTouch, { passive: true });
     window.addEventListener('touchend', settle);
     window.addEventListener('touchcancel', settle);
     return () => {
       window.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseleave', settle);
+      window.removeEventListener('touchmove', onTouch);
       window.removeEventListener('touchend', settle);
       window.removeEventListener('touchcancel', settle);
     };
@@ -73,7 +102,7 @@ export default function AppShell() {
         style={{ opacity: blackIn ? 0 : 1 }}
       >
         <img
-          src="/logo.png"
+          src={`${import.meta.env.BASE_URL}logo.png`}
           alt="Lunch Company"
           className="anim-pop w-64 max-w-[80vw] rounded-2xl shadow-2xl"
           style={{ animationDuration: '0.8s' }}
@@ -102,8 +131,8 @@ export default function AppShell() {
         'dots-bg relative mx-auto flex h-full max-w-md flex-col overflow-hidden',
         settings.frosted && 'frosted-on',
 
-        (settings.theme ?? 'light') === 'dark' && 'theme-dark',
-        (settings.theme ?? 'light') === 'light' && 'theme-light',
+        (settings.theme ?? 'dark') === 'dark' && 'theme-dark',
+        (settings.theme ?? 'dark') === 'light' && 'theme-light',
       )}
       style={{
         background: settings.bgColor || undefined,
@@ -160,16 +189,22 @@ export default function AppShell() {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto pb-32">
+      <main className="relative flex-1 overflow-y-auto pb-48">
         <div key={location.pathname} className="anim-page">
           <Outlet />
         </div>
       </main>
 
+      {/* 顶部高斯模糊渐变 */}
+      <div className="pointer-events-none fixed top-0 left-0 right-0 z-[250] h-10 backdrop-blur-[2px]" style={{ maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)' }} />
+      {/* 底部高斯模糊渐变 */}
+      <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-[250] h-10 backdrop-blur-[2px]" style={{ maskImage: 'linear-gradient(to top, black, transparent)', WebkitMaskImage: 'linear-gradient(to top, black, transparent)' }} />
+
       {/* 液态玻璃浮窗底栏：扁长药丸 */}
       <nav
+        style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
         className={cn(
-          'absolute bottom-3 left-1/2 z-30 flex w-[92%] max-w-sm -translate-x-1/2 items-center justify-between gap-0.5 rounded-full p-1',
+          'absolute left-1/2 z-[300] flex w-[92%] max-w-sm -translate-x-1/2 items-center justify-between gap-0.5 rounded-full p-1',
           'shadow-lg ring-1 ring-black/10 backdrop-blur-xl',
           settings.frosted ? 'card-glass' : 'card-solid',
         )}

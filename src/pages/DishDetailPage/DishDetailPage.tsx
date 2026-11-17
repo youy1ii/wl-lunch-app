@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ChevronLeft, Heart, ChevronDown, Send, ShieldBan } from 'lucide-react';
+import { ChevronLeft, Heart, ChevronDown, Send, ShieldBan, CalendarDays } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
 import { avgOf, tierOf, votesOf, TIERS } from '@/lib/mock-data';
 import { t } from '@/lib/i18n';
@@ -15,7 +15,8 @@ const PREVIEW_REPLIES = 2;
 export default function DishDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { dishes, settings, addReview, toggleLike, deleteReview, replyReview, user, isAdmin, sendAdminMessage, myRatings, followees, toggleFollow } = useApp();
+  const { dishes, settings, addReview, toggleLike, deleteReview, replyReview, user, isAdmin, sendAdminMessage, banUser, myRatings, followees, toggleFollow } = useApp();
+  const isOwner = user?.uid === "00000000";
   const dish = dishes.find((d) => d.id === Number(id));
   const [showDist, setShowDist] = useState(false);
   const [open, setOpen] = useState(false);
@@ -25,10 +26,11 @@ export default function DishDetailPage() {
   const [replyText, setReplyText] = useState('');
   const [dmTo, setDmTo] = useState<string | null>(null);
   const [dmText, setDmText] = useState('');
-  const [confirm, setConfirm] = useState<null | { kind: 'delete' | 'ban'; reviewId: number; author: string }>(null);
+  const [confirm, setConfirm] = useState<null | { kind: 'delete' | 'ban'; reviewId: number; author: string; uid?: string }>(null);
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
   const [commentTab, setCommentTab] = useState<'all' | 'hot' | 'follow'>('hot');
   const [scrolled, setScrolled] = useState(0);
+  const [profileCard, setProfileCard] = useState<string | null>(null);
   const [showTop, setShowTop] = useState(false);
 
   useEffect(() => {
@@ -58,11 +60,16 @@ export default function DishDetailPage() {
 
   const submit = () => {
     if (selectedTier < 1) return;
-    addReview(dish.id, selectedTier, text);
-    setOpen(false);
-    setSelectedTier(0);
-    setText('');
-    toast.success('打分成功！你的评价已上榜');
+    addReview(dish.id, selectedTier, text).then((ok) => {
+      if (ok) {
+        setOpen(false);
+        setSelectedTier(0);
+        setText('');
+        toast.success('打分成功！你的评价已上榜');
+      } else {
+        toast.error('打分失败，请检查网络后重试');
+      }
+    });
   };
 
   const toggleExpand = (rid: number) =>
@@ -90,6 +97,12 @@ export default function DishDetailPage() {
           <div className="text-4xl font-black text-white/90">{dish.name.slice(0, 1)}</div>
           <div className="mt-2 text-xl font-black text-white">{dish.name}</div>
           <div className="text-sm font-bold text-white/90">¥{dish.price}</div>
+          {dish.launchDate && (
+            <div className="mt-2 flex items-center gap-1 text-xs font-medium text-white/80">
+              <CalendarDays size={12} />
+              {t(settings.lang, 'launchOn')} {dish.launchDate}
+            </div>
+          )}
         </div>
 
         {/* 深色大卡片：评分 + 评论区一体，圆角从顶部开始，一直延伸到底 */}
@@ -190,6 +203,9 @@ export default function DishDetailPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => setProfileCard(r.author)} className={"pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-black ring-2 " + (r.author === "WLLC2026" ? "bg-emerald-500 text-white ring-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.4)]" : "bg-primary/20 text-primary ring-transparent")}>
+                        {r.author.slice(0, 1).toUpperCase()}
+                      </button>
                       {followees.includes(r.author) ? (
                         <button
                           type="button"
@@ -216,7 +232,7 @@ export default function DishDetailPage() {
                           {r.author}
                         </button>
                       ) : (
-                        <span className="text-xs font-bold">{r.author}{((r.author === "admin" || r.author === "管理员" || r.mine) && isAdmin) && <span className="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-[9px] text-primary-foreground">管理员</span>}</span>
+                        <span className="text-xs font-bold">{r.author}{((r.author === "admin" || r.author === "管理员" || r.mine) && isAdmin) && <span className={"ml-1 rounded-full px-1.5 py-0.5 text-[9px] text-white " + (isOwner ? "bg-emerald-400" : "bg-primary")}>{isOwner ? "总管理员" : "管理员"}</span>}</span>
                       )}
                     </div>
                     <span
@@ -227,6 +243,7 @@ export default function DishDetailPage() {
                     </span>
                   </div>
                   <p className="mt-1.5 text-sm leading-relaxed">{r.text}</p>
+                  {r.createdAt && <p className="mt-0.5 text-[10px] text-muted-foreground/60">{new Date(r.createdAt).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>}
 
                   {/* 操作行 */}
                   <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
@@ -258,7 +275,7 @@ export default function DishDetailPage() {
                       <button
                         type="button"
                         className="pressable text-destructive"
-                        onClick={() => setConfirm({ kind: 'ban', reviewId: r.id, author: r.author })}
+                        onClick={() => setConfirm({ kind: 'ban', reviewId: r.id, author: r.author, uid: r.authorUid })}
                       >
                         <span className="flex items-center gap-0.5">
                           <ShieldBan size={12} />
@@ -266,13 +283,13 @@ export default function DishDetailPage() {
                         </span>
                       </button>
                     )}
-                    {(r.mine || user) && (
+                    {(r.mine || isAdmin) && (
                       <button
                         type="button"
                         className="text-destructive pressable"
                         onClick={() => setConfirm({ kind: 'delete', reviewId: r.id, author: r.author })}
                       >
-                        {t(settings.lang, 'deleteMine')}
+                        {isAdmin && !r.mine ? '删除' : t(settings.lang, 'deleteMine')}
                       </button>
                     )}
                   </div>
@@ -356,9 +373,10 @@ export default function DishDetailPage() {
                           className="flex-1 rounded-lg bg-primary py-1.5 text-xs font-bold text-primary-foreground pressable"
                           onClick={() => {
                             if (!dmText.trim()) return;
-                            sendAdminMessage(r.author, dmText.trim());
-                            toast.success(`已私信 ${r.author}`);
-                            setDmTo(null); setDmText('');
+                            sendAdminMessage(r.author, dmText.trim()).then((ok) => {
+                              if (ok) { toast.success(`已私信 ${r.author}`); setDmTo(null); setDmText(''); }
+                              else toast.error('发送失败，请检查网络后重试');
+                            });
                           }}
                         >
                           发送
@@ -447,6 +465,58 @@ export default function DishDetailPage() {
         document.body,
       )}
 
+      {/* 用户小卡片 */}
+      {profileCard && createPortal(
+        <div className="fixed inset-0 z-[310] flex items-center justify-center bg-black/60 p-4" onClick={() => setProfileCard(null)}>
+          <div className="anim-rise w-full max-w-xs rounded-2xl border border-border bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-col items-center">
+              <div className={
+                "flex h-16 w-16 items-center justify-center rounded-full text-2xl font-black " +
+                (profileCard === "WLLC2026" ? "ring-4 ring-emerald-400 shadow-emerald-300/60 shadow-lg bg-emerald-400 text-white" : "bg-primary/20 text-primary")
+              }>{profileCard.slice(0,1).toUpperCase()}</div>
+              <h3 className="mt-2 text-sm font-black">{profileCard}</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {profileCard === "WLLC2026" ? "总管理员" : "同学"}
+              </p>
+              <div className="mt-3 flex gap-6 text-center">
+                <div>
+                  <div className="text-sm font-black">
+                    {Math.abs(profileCard.charCodeAt(0) % 30 + 5)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">关注</div>
+                </div>
+                <div>
+                  <div className="text-sm font-black">
+                    {Math.abs(profileCard.length * 7 + 3) + (followees.includes(profileCard) ? 1 : 0)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">粉丝</div>
+                </div>
+                <div>
+                  <div className="text-sm font-black">
+                    {Math.abs(profileCard.charCodeAt(0) % 15 + 1)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">评价</div>
+                </div>
+              </div>
+              <div className="mt-3 max-h-16 w-full overflow-y-auto rounded-lg bg-muted/50 p-2 text-center text-[11px] leading-relaxed text-muted-foreground">
+                {profileCard === "WLLC2026" ? "文来食堂APP创建者" : "是否留下一些痕迹证明自己来过"}
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleFollow(profileCard)}
+                className={
+                  "mt-3 w-full rounded-full py-2 text-xs font-bold pressable " +
+                  (followees.includes(profileCard) ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground")
+                }
+              >
+                {followees.includes(profileCard) ? "已关注" : "关注"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+
       {/* 确认弹窗 */}
       {confirm && createPortal(
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={() => setConfirm(null)}>
@@ -474,13 +544,15 @@ export default function DishDetailPage() {
                 type="button"
                 className="flex-1 rounded-xl bg-destructive py-3 text-sm font-bold text-white pressable"
                 onClick={() => {
-                  if (confirm.kind === 'delete') {
-                    deleteReview(dish.id, confirm.reviewId);
-                    toast.success('评价已删除');
-                  } else {
-                    toast.success(`已封禁 ${confirm.author}（演示）`);
-                  }
+                  const target = confirm;
                   setConfirm(null);
+                  if (target.kind === 'delete') {
+                    deleteReview(dish.id, target.reviewId).then((ok) => ok ? toast.success('评价已删除') : toast.error('删除失败，请重试'));
+                  } else if (target.uid) {
+                    banUser(target.uid).then((ok) => ok ? toast.success(`已封禁 ${target.author}`) : toast.error('封禁失败，请重试'));
+                  } else {
+                    toast.error('该用户缺少 UID，无法封禁');
+                  }
                 }}
               >
                 确认{confirm.kind === 'delete' ? '删除' : '封禁'}

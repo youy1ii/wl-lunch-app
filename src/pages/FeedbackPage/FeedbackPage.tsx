@@ -15,9 +15,14 @@ export default function FeedbackPage() {
 
   const submit = () => {
     if (!text.trim()) return;
-    addFeedback(kind, text.trim(), anon);
-    toast.success(t(settings.lang, 'saved'));
-    setText('');
+    addFeedback(kind, text.trim(), anon).then((ok) => {
+      if (ok) {
+        toast.success('提交成功，管理员会尽快查看');
+        setText('');
+      } else {
+        toast.error('提交失败，请检查网络后重试');
+      }
+    });
   };
 
   return (
@@ -72,9 +77,12 @@ export default function FeedbackPage() {
               </span>
             </div>
             <p className="mt-1 text-sm">{f.text}</p>
-            {f.reply && <p className="mt-1 border-l-2 border-primary pl-2 text-xs text-muted-foreground">{f.reply}</p>}
+            {f.reply && <p className="mt-1 border-l-2 border-primary pl-2 text-xs text-success">↳ {f.reply}</p>}
           </div>
         ))}
+        <div className="mt-4 rounded-xl bg-card p-3 text-center text-xs leading-relaxed text-muted-foreground">
+          如果有不方便沟通的事可以联系总管理！<br/>3352360189
+        </div>
       </div>
     </div>
   );

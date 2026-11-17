@@ -21,6 +21,9 @@ export default function AdminPage() {
     addDish,
     deleteDish,
     toggleDishNew,
+    setDishImage,
+    setDishMeal,
+    setDishTags,
     replyFeedback,
     postAnnouncement,
     setBanners,
@@ -30,8 +33,10 @@ export default function AdminPage() {
     frames: avatarFrames,
     issueFrame,
     uploadFrame,
+    user,
   } = useApp();
   const navigate = useNavigate();
+  const isOwner = user?.uid === '00000000';
   const [showTop, setShowTop] = useState(false);
 
   const [name, setName] = useState('');
@@ -66,8 +71,29 @@ export default function AdminPage() {
   const [frameUnlock, setFrameUnlock] = useState('');
   const [uploaded, setUploaded] = useState(false);
   const [frameImg, setFrameImg] = useState('');
+        const [frameMaxClaims, setFrameMaxClaims] = useState(100);
+        const [frameExpires, setFrameExpires] = useState('');
   const [issueTarget, setIssueTarget] = useState('');
   const qrRef = useRef<HTMLInputElement>(null);
+  const [manageUid, setManageUid] = useState('');
+  const [manageMsg, setManageMsg] = useState('');
+  const [inviteCodes, setInviteCodes] = useState<{code: string; used: boolean}[]>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('wl-lunch:invite-codes') || 'null');
+      if (saved && Array.isArray(saved) && saved.length === 8) return saved;
+    } catch {}
+    return [];
+  });
+  const genInviteCodes = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const codes = Array.from({length: 8}, () => {
+      let code = '';
+      for (let i = 0; i < 10; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      return { code, used: false };
+    });
+    localStorage.setItem('wl-lunch:invite-codes', JSON.stringify(codes));
+    setInviteCodes(codes);
+  };
 
   const report = (() => {
     const scored = dishes.filter((d) => votesOf(d) >= 5).sort((a, b) => avgOf(b) - avgOf(a));
@@ -119,7 +145,7 @@ export default function AdminPage() {
             { id: 'sec-banner', icon: '🖼️', label: 'Banner', color: '#8B5CF6' },
             { id: 'sec-pinned', icon: '📌', label: '置顶公告', color: '#F97316' },
             { id: 'sec-tips', icon: '💰', label: '赞赏码', color: '#10B981' },
-            { id: 'sec-feedback', icon: '📬', label: '反馈箱', color: '#EF4444' },
+            
             { id: 'sec-dm', icon: '✉️', label: '私信广播', color: '#6366F1' },
           ].map((item) => (
             <button
@@ -154,9 +180,13 @@ export default function AdminPage() {
             }} className="text-xs" />
             {frameImg && <img src={frameImg} className="h-10 w-10 rounded-full" />}
           </div>
+          <div className="mb-2 flex gap-2">
+            <input type="number" value={frameMaxClaims || ''} onChange={(e) => setFrameMaxClaims(Number(e.target.value))} placeholder="领取人数(空=不限)" className="flex-1 rounded-lg bg-muted px-2 py-1 text-xs" />
+            <input type="date" value={frameExpires} onChange={(e) => setFrameExpires(e.target.value)} className="flex-1 rounded-lg bg-muted px-2 py-1 text-xs" />
+          </div>
           <button
             type="button"
-            onClick={() => { if (frameName) { uploadFrame({ name: frameName, unlockText: frameUnlock || '待解锁', imageUrl: frameImg, special: true }); setFrameName(''); setFrameUnlock(''); setFrameImg(''); setUploaded(true); setTimeout(() => setUploaded(false), 2000); } }}
+            onClick={() => { if (frameName) { uploadFrame({ name: frameName, unlockText: frameUnlock || '兑换码解锁', imageUrl: frameImg, special: true, maxClaims: frameMaxClaims || 100, expiresAt: frameExpires || undefined }); setFrameName(''); setFrameUnlock(''); setFrameImg(''); setFrameMaxClaims(0); setFrameExpires(''); setUploaded(true); setTimeout(() => setUploaded(false), 2000); } }}
             className="w-full rounded-lg bg-primary py-2 text-xs font-bold text-primary-foreground pressable"
           >
             {uploaded ? '✅ 上传成功！' : '上传新头像框'}
@@ -165,13 +195,36 @@ export default function AdminPage() {
             <div className="mb-1 text-xs font-bold">现有头像框：</div>
             {avatarFrames.map((fr) => (
               <div key={fr.id} className="mb-1 flex items-center gap-2 text-xs">
-                <span className="flex-1">{fr.name}（{fr.issuedTo.length}人拥有）</span>
+                <span className="flex-1">{fr.name}（{fr.issuedTo.length}/{fr.maxClaims || '∞'}人）{fr.code && <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono">{fr.code}</span>}</span>
                 <input value={issueTarget} onChange={(e) => setIssueTarget(e.target.value)} placeholder="发给谁" className="w-20 rounded bg-muted px-1 py-0.5" />
                 <button type="button" onClick={() => { if (issueTarget) { issueFrame(fr.id, issueTarget); setIssueTarget(''); } }} className="rounded bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground pressable">颁发</button>
               </div>
             ))}
           </div>
         </div>
+
+        {/* 邀请码管理 - 仅总管理员可见 */}
+        {isOwner && (
+        <div className="card-solid rounded-2xl p-4 shadow-sm">
+          <h2 className="mb-1 text-base font-black">🎟️ 管理员邀请码</h2>
+          <p className="mb-3 text-[10px] text-muted-foreground">每个码只能用一次，刷新后旧码失效</p>
+          <div className="mb-3 grid grid-cols-2 gap-2">
+            {inviteCodes.length === 0 && <p className="col-span-2 text-center text-xs text-muted-foreground">点击下方按钮生成8个邀请码</p>}
+            {inviteCodes.map((ic) => (
+              <div key={ic.code} className={"rounded-lg px-2 py-1.5 text-center font-mono text-xs " + (ic.used ? "bg-muted/50 text-muted-foreground line-through" : "bg-primary/10 text-primary font-bold")}>
+                {ic.code}
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={genInviteCodes}
+            className="w-full rounded-lg bg-primary py-2 text-xs font-bold text-primary-foreground pressable"
+          >
+            {inviteCodes.length === 0 ? '生成8个邀请码' : '刷新8个新邀请码'}
+          </button>
+        </div>
+        )}
 
         {/* 一键报告 */}
         <section id="sec-report" className="card-solid rounded-2xl p-4 shadow-sm">
@@ -202,9 +255,10 @@ export default function AdminPage() {
               type="button"
               onClick={() => {
                 if (!name.trim() || !price) return;
-                addDish(name.trim(), Number(price), win);
-                setName(''); setPrice('');
-                toast.success(t(settings.lang, 'saved'));
+                addDish(name.trim(), Number(price), win).then((ok) => {
+                  if (ok) { setName(''); setPrice(''); toast.success(t(settings.lang, 'saved')); }
+                  else toast.error('菜品添加失败，请检查网络后重试');
+                });
               }}
               className="rounded-lg bg-primary p-2 text-white"
             >
@@ -214,6 +268,8 @@ export default function AdminPage() {
           <div className="mt-2 space-y-1">
             {dishes.map((d) => (
               <div key={d.id} className="flex items-center justify-between text-sm">
+                <label className="cursor-pointer">📷<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => setDishImage(d.id, String(r.result)); r.readAsDataURL(f); }} /></label>
+                <select value={d.mealType || 'lunch'} onChange={(e) => setDishMeal(d.id, e.target.value)} className="rounded bg-muted px-1 text-[10px]"><option value="breakfast">早饭</option><option value="lunch">中饭</option><option value="dinner">晚饭</option><option value="supper">夜宵</option></select>
                 <span className="truncate">
                   {d.name} <span className="text-xs text-muted-foreground">¥{d.price}</span>
                   {d.isNew && <span className="ml-1 rounded-full bg-red-500 px-1.5 text-[9px] font-bold text-white">新品</span>}
@@ -286,9 +342,12 @@ export default function AdminPage() {
             type="button"
             onClick={() => {
               if (!annTitle.trim()) return;
-              postAnnouncement(annTitle.trim(), annBody.trim(), annImage || undefined, annLink || undefined);
-              setAnnTitle(''); setAnnBody(''); setAnnImage(''); setAnnLink('');
-              toast.success(t(settings.lang, 'saved'));
+              postAnnouncement(annTitle.trim(), annBody.trim(), annImage || undefined, annLink || undefined).then((ok) => {
+                if (ok) {
+                  setAnnTitle(''); setAnnBody(''); setAnnImage(''); setAnnLink('');
+                  toast.success('公告发布成功，所有设备同步');
+                } else toast.error('公告发布失败，请检查网络后重试');
+              });
             }}
             className="mt-2 w-full rounded-lg bg-primary py-2 text-sm font-bold text-primary-foreground"
           >
@@ -311,8 +370,10 @@ export default function AdminPage() {
               type="button"
               onClick={() => {
                 if (!tickerDraft.trim()) return;
-                setTicker(tickerDraft.trim());
-                toast.success(t(settings.lang, 'saved'));
+                setTicker(tickerDraft.trim()).then((ok) => {
+                  if (ok) { setTickerDraft(''); toast.success(t(settings.lang, 'saved')); }
+                  else toast.error('发布失败，请检查网络后重试');
+                });
               }}
               className="rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"
             >
@@ -322,16 +383,16 @@ export default function AdminPage() {
         </section>
 
         {/* 管理员私信 */}
-        <section className="card-solid rounded-2xl p-4 shadow-sm ring-1 ring-black/5">
+        <section id="sec-dm" className="card-solid rounded-2xl p-4 shadow-sm ring-1 ring-black/5">
           <h3 className="mb-2 flex items-center gap-1.5 text-sm font-black">
             <Send size={16} className="text-primary" />
             发送私信
           </h3>
-          <p className="mb-2 text-xs text-muted-foreground">向指定同学发管理员私信（留空=全员广播）。</p>
+          <p className="mb-2 text-xs text-muted-foreground">输入对方UID发管理员私信，留空=全员广播。</p>
           <input
             value={dmTarget}
             onChange={(e) => setDmTarget(e.target.value)}
-            placeholder="对方昵称（@xxx），留空则广播"
+            placeholder="对方UID（留空=全员广播）"
             className="mb-2 w-full rounded-lg bg-muted px-2 py-1.5 text-sm outline-none"
           />
           <textarea
@@ -344,9 +405,10 @@ export default function AdminPage() {
             type="button"
             onClick={() => {
               if (!dmText.trim()) return;
-              sendAdminMessage(dmTarget.trim(), dmText.trim());
-              setDmTarget(''); setDmText('');
-              toast.success('已发送');
+              sendAdminMessage(dmTarget.trim(), dmText.trim()).then((ok) => {
+                if (ok) { setDmTarget(''); setDmText(''); toast.success('已发送'); }
+                else toast.error('发送失败，请检查网络后重试');
+              });
             }}
             className="mt-2 w-full rounded-lg bg-primary py-2 text-sm font-bold text-primary-foreground"
           >
@@ -453,9 +515,12 @@ export default function AdminPage() {
             type="button"
             onClick={() => {
               if (!bannerTitle.trim()) return;
-              setBanners([...banners, { id: Date.now(), title: bannerTitle.trim(), target: bannerTarget.trim() || '/', image: bannerImage || undefined }]);
-              setBannerTitle(''); setBannerTarget(''); setBannerImage('');
-              toast.success(t(settings.lang, 'saved'));
+              setBanners([...banners, { id: Date.now(), title: bannerTitle.trim(), target: bannerTarget === '__external__' ? (bannerExternalUrl || '/') : (bannerTarget.trim() || '/'), image: bannerImage || undefined }]).then((ok) => {
+                if (ok) {
+                  setBannerTitle(''); setBannerTarget(''); setBannerImage('');
+                  toast.success('海报发布成功，所有设备同步');
+                } else toast.error('海报发布失败，请检查网络后重试');
+              });
             }}
             className="w-full rounded-lg bg-primary py-2 text-sm font-bold text-white"
           >
@@ -501,30 +566,7 @@ export default function AdminPage() {
           </button>
         </section>
 
-        {/* 反馈处理 */}
-        <section id="sec-feedback" className="card-solid rounded-2xl p-4 shadow-sm">
-          <h3 className="mb-2 text-sm font-black">{t(settings.lang, 'adminFeedback')} ({feedbacks.filter((f) => f.status === 'pending').length})</h3>
-          {feedbacks.length === 0 && <p className="text-xs text-muted-foreground">—</p>}
-          {feedbacks.map((f) => (
-            <div key={f.id} className="mb-2 border-b border-border pb-2 text-sm">
-              <p>{f.text}</p>
-              {f.status === 'pending' ? (
-                <input
-                  placeholder={t(settings.lang, 'replyPlaceholder')}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
-                      replyFeedback(f.id, (e.target as HTMLInputElement).value.trim());
-                      toast.success(t(settings.lang, 'saved'));
-                    }
-                  }}
-                  className="mt-1 w-full rounded-lg bg-muted px-2 py-1 text-xs outline-none"
-                />
-              ) : (
-                <p className="mt-1 text-xs text-success">↳ {f.reply}</p>
-              )}
-            </div>
-          ))}
-        </section>
+
       </div>
 
       {/* 报告弹层（portal 到 body，避免被 transform 困住） */}

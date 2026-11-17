@@ -100,7 +100,7 @@ function collectRoutePaths(srcDir: string): string[] {
 }
 
 export default defineConfig(({ command }) => ({
-  plugins: [react(), tailwindcss(), miaodaOutputPlugin(), sparkJsonPlugin()],
+  plugins: [react(), tailwindcss(), sparkJsonPlugin()],
   // 生产构建：JS/CSS 引用带 CDN 前缀（无 CDN 时退回 base path）；dev 恒为 /
   base: command === 'build' ? cdnPrefix || basePath : '/',
   define: {

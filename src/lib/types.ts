@@ -18,7 +18,11 @@ export interface IReview {
   liked: boolean;
   replies: IReply[];
   mine?: boolean;
+  authorUid?: string;
+  createdAt?: string;
 }
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'supper';
 
 export interface IDish {
   id: number;
@@ -27,6 +31,10 @@ export interface IDish {
   price: number;
   veggie?: boolean; // 素菜
   isNew?: boolean; // 新品标记
+  mealType?: MealType; // 早饭/中饭/晚饭/夜宵
+  tags?: string[]; // 辣/汤/素/甜/咸 etc
+  image?: string; // 菜品预览图 dataURL
+  launchDate?: string; // 菜品上线日期 YYYY-MM-DD
   counts: number[]; // 索引 0..4 对应 1..5 分的人数
   reviews: IReview[];
 }
@@ -39,14 +47,19 @@ export interface IAnnouncement {
   pinned?: boolean;
   imageUrl?: string;
   linkUrl?: string;
+  authorUid?: string;
 }
 
 export interface INotification {
   id: number;
-  kind: 'like' | 'reply' | 'admin';
+  kind: 'like' | 'reply' | 'admin' | 'feedback';
   text: string;
   time: string;
   read: boolean;
+  feedbackText?: string;
+  replyText?: string;
+  adminRep?: string;
+  replyTime?: string;
 }
 
 export interface IBanner {
@@ -64,11 +77,16 @@ export interface IFeedback {
   status: 'pending' | 'replied';
   reply?: string;
   author: string;
+  authorUid?: string;
+  authorRealName?: string;
+  adminRep?: string;
+  repliedAt?: string;
 }
 
 export interface IUser {
   uid?: string; // 8-digit, admin = 00000000
   username: string;
+  nickname?: string;
   realName: string;
   role: 'student' | 'teacher';
   studentId?: string;
@@ -104,4 +122,7 @@ export interface IAvatarFrame {
   unlockText: string; // how to get it
   issuedTo: string[]; // usernames who have it
   special?: boolean; // admin-issued special
+  code?: string; // redemption code
+  maxClaims?: number; // max number of users who can redeem
+  expiresAt?: string; // ISO date
 }

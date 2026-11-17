@@ -58,6 +58,7 @@ html, body, #root {
 
 body {
   font-family: var(--font-sans);
+  overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -66,7 +67,18 @@ body {
 
 /* 金色泛光（收敛，不晃眼） */
 .glow-gold {
-  box-shadow: 0 2px 10px rgba(232, 185, 35, 0.25);
+  box-shadow:
+    0 0 0 3px #E8B923,
+    0 0 12px rgba(232, 185, 35, 0.8),
+    0 0 24px rgba(232, 185, 35, 0.4);
+}
+
+/* 薄荷绿泛光（总管理员） */
+.glow-mint {
+  box-shadow:
+    0 0 0 3px #34D399,
+    0 0 12px rgba(52, 211, 153, 0.9),
+    0 0 24px rgba(52, 211, 153, 0.5);
 }
 
 /* 细滚动条 */
@@ -102,7 +114,7 @@ body {
 .anim-tier { animation: tier-zoom 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-float { animation: float-y 3s ease-in-out infinite; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overscroll-behavior: none; }
 
 /* 按压反馈 */
 .pressable { transition: transform 0.12s ease, opacity 0.15s ease; }

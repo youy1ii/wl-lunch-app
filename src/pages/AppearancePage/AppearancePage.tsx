@@ -50,12 +50,20 @@ export default function AppearancePage() {
     reader.onload = () => {
       try {
         const family = `Custom-${Date.now()}`;
-        const ff = new FontFace(family, String(reader.result));
+        const buf = reader.result as ArrayBuffer;
+        const ff = new FontFace(family, buf);
         ff.load().then((f) => {
           document.fonts.add(f);
+          try {
+            const bytes = new Uint8Array(buf);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+            localStorage.setItem('wl-custom-font-b64', btoa(binary));
+            localStorage.setItem('wl-custom-font-family', family);
+          } catch {}
           setSettings({ font: family });
           toast.success(t(settings.lang, 'saved'));
-        });
+        }).catch(() => toast.error('字体加载失败'));
       } catch {
         toast.error('字体加载失败');
       }
@@ -242,7 +250,7 @@ export default function AppearancePage() {
                 type="button"
                 onClick={() => setSettings({ theme: t.id })}
                 className={
-                  (settings.theme ?? 'light') === t.id
+                  (settings.theme ?? 'dark') === t.id
                     ? 'flex-1 rounded-full bg-primary py-1.5 text-xs font-bold text-primary-foreground pressable'
                     : 'flex-1 rounded-full bg-muted py-1.5 text-xs font-bold text-muted-foreground pressable'
                 }

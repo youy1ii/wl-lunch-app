@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, ThumbsDown, Megaphone, Bell } from 'lucide-react';
+import { Trophy, ThumbsDown, Megaphone, Bell, Users } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
+import type { INotification } from '@/lib/types';
 import { avgOf, tierOf, votesOf } from '@/lib/mock-data';
 import type { IDish } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { t } from '@/lib/i18n';
+import AdminGroupChat from '@/components/AdminGroupChat';
 
 const PODIUM = [
   { rank: 1, color: '#F5C518', barH: 'h-24' },
@@ -76,11 +80,13 @@ function PodiumBlock({
 }
 
 export default function HomePage() {
-  const { banners, dishes, ticker, notifications, markAllNotificationsRead } = useApp();
+  const { banners, dishes, ticker, notifications, markAllNotificationsRead, isAdmin, settings, user } = useApp();
   const [idx, setIdx] = useState(0);
   const [dragDx, setDragDx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [showNotif, setShowNotif] = useState(false);
+  const [emailDetail, setEmailDetail] = useState<INotification | null>(null);
+  const [showGroup, setShowGroup] = useState(false);
   const navigate = useNavigate();
   const dragState = useRef<number>(0);
 
@@ -132,30 +138,49 @@ export default function HomePage() {
         <h1 className="text-xl font-black tracking-tight">
           WL <span style={{ color: 'var(--primary)' }}>Lunch</span>
         </h1>
-        <button
-          type="button"
-          onClick={() => {
-            setShowNotif((v) => !v);
-            markAllNotificationsRead();
-          }}
-          className="pressable relative flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 ring-black/5" style={{ background: 'var(--card)' }}
-        >
-          <Bell size={18} />
-          {unread > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF4D2E] text-[9px] font-black text-white">
-              {unread}
-            </span>
+        <div className="flex items-center gap-2">
+          {(isAdmin || user?.username === 'WLLC2026' || user?.uid === '00000000') && (
+            <button
+              type="button"
+              onClick={() => setShowGroup(true)}
+              className="pressable relative flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 ring-black/5"
+              style={{ background: 'var(--card)', color: 'var(--primary)' }}
+            >
+              <Users size={18} />
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-black text-primary-foreground">
+                群
+              </span>
+            </button>
           )}
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowNotif((v) => !v);
+              markAllNotificationsRead();
+            }}
+            className="pressable relative flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 ring-black/5" style={{ background: 'var(--card)' }}
+          >
+            <Bell size={18} />
+            {unread > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF4D2E] text-[9px] font-black text-white">
+                {unread}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* 通知下拉：三类分组 */}
       {showNotif && (
         <div className="anim-pop absolute right-4 top-16 z-40 w-72 rounded-xl p-2 shadow-xl ring-1 ring-black/10" style={{ background: 'var(--card)' }}>
+          {notifications.length === 0 && (
+            <div className="py-6 text-center text-xs text-muted-foreground">暂无通知</div>
+          )}
           {([
             { kind: 'like' as const, label: '收到的赞', color: '#FF4D6D' },
             { kind: 'reply' as const, label: '新回复', color: '#38B6FF' },
             { kind: 'admin' as const, label: '管理员私信', color: '#E8B923' },
+            { kind: 'feedback' as const, label: '反馈回复', color: '#22C55E' },
           ]).map((grp) => {
             const list = notifications.filter((n) => n.kind === grp.kind);
             if (list.length === 0) return null;
@@ -168,7 +193,7 @@ export default function HomePage() {
                   {grp.label}
                 </div>
                 {list.map((n) => (
-                  <div key={n.id} className="rounded-b-lg px-2 py-2 text-xs leading-relaxed hover:bg-muted">
+                  <div key={n.id} className="pressable rounded-b-lg px-2 py-2 text-xs leading-relaxed hover:bg-muted" onClick={() => { if (n.kind === 'feedback') { setEmailDetail(n); markAllNotificationsRead(); } }}>
                     <div className="text-muted-foreground">{n.time}</div>
                     <div className="mt-0.5">{n.text}</div>
                   </div>
@@ -177,6 +202,28 @@ export default function HomePage() {
             );
           })}
         </div>
+      )}
+
+      {/* 邮件样式详情 */}
+      {emailDetail && createPortal(
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4" onClick={() => setEmailDetail(null)}>
+          <div className="anim-rise w-full max-w-sm rounded-2xl bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-1 text-xs text-muted-foreground">@{emailDetail.adminRep || '管理员'}</div>
+            <h3 className="mb-2 text-sm font-black">关于你的反馈</h3>
+            <p className="text-sm leading-relaxed">{emailDetail.feedbackText}</p>
+            <div className="my-3 border-t border-border" />
+            <div className="flex items-start gap-2">
+              <span className="text-muted-foreground">↳</span>
+              <p className="flex-1 text-sm text-success">{emailDetail.replyText}</p>
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-[9px] font-black text-primary">{(emailDetail.adminRep || 'A').slice(0,1).toUpperCase()}</div>
+              <span>{emailDetail.adminRep}</span>
+              <span>· {emailDetail.replyTime ? new Date(emailDetail.replyTime).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</span>
+            </div>
+          </div>
+        </div>,
+        document.body,
       )}
 
       {/* Banner：跟手拖动 */}
@@ -208,7 +255,7 @@ export default function HomePage() {
             >
               {!b.image && <div className="dots-bg-fine absolute inset-0 opacity-30" />}
               <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent" />
-              <div className="relative text-xl font-black text-white drop-shadow-lg">{b.title}</div>
+              {!b.image && <div className="relative text-xl font-black text-white drop-shadow-lg">{b.title}</div>}
             </button>
           ))}
         </div>
@@ -238,9 +285,11 @@ export default function HomePage() {
 
       {/* 两个领奖台 */}
       <div className="flex-1 overflow-y-auto pb-4">
-        <PodiumBlock title="全校最爱 TOP3" list={loves} good onOpen={(id) => navigate(`/dishes/${id}`)} />
-        <PodiumBlock title="全校最拉 TOP3" list={hates} good={false} onOpen={(id) => navigate(`/dishes/${id}`)} />
+        <PodiumBlock title={t(settings.lang, 'lovedTop3')} list={loves} good onOpen={(id) => navigate(`/dishes/${id}`)} />
+        <PodiumBlock title={t(settings.lang, 'hatedTop3')} list={hates} good={false} onOpen={(id) => navigate(`/dishes/${id}`)} />
       </div>
+
+      <AdminGroupChat open={showGroup} onClose={() => setShowGroup(false)} />
     </div>
   );
 }

@@ -18,13 +18,15 @@ export default function LoginPage() {
   const [studentId, setStudentId] = useState('');
   const [klass, setKlass] = useState('');
   const [grade, setGrade] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [err, setErr] = useState('');
 
   if (isAdmin) return null;
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!account.trim() || !pwd.trim()) { setErr('请输入账号和密码'); return; }
-    const r = loginWithAccountPwd(account, pwd);
+    const r = await loginWithAccountPwd(account, pwd);
+    if (r.bad) { setErr(r.bad); return; }
     if (r.admin) return;
     if (r.needProfile) setStep('reg2');
   };
@@ -36,13 +38,27 @@ export default function LoginPage() {
 
   const handleReg2 = () => {
     if (!realName.trim()) { setErr('请填真实姓名'); return; }
+    let finalRole: 'student' | 'teacher' = role;
+    const code = inviteCode.trim().toUpperCase();
+    if (code) {
+      const codes = JSON.parse(localStorage.getItem('wl-lunch:invite-codes') || '[]');
+      const found = codes.find((ic: any) => ic.code === code);
+      if (!found) { setErr('邀请码无效'); return; }
+      if (found.used) { setErr('该邀请码已被使用'); return; }
+      // Mark as used
+      found.used = true;
+      localStorage.setItem('wl-lunch:invite-codes', JSON.stringify(codes));
+      finalRole = 'teacher';
+    } else if (role === 'teacher') {
+      setErr('老师注册需要邀请码'); return;
+    }
     const u: IUser = {
       username: account.trim() || nickname.trim(),
       realName: realName.trim(),
-      role,
-      studentId: role === 'student' ? studentId : undefined,
-      klass: role === 'student' ? klass : undefined,
-      grade: role === 'student' ? grade : undefined,
+      role: finalRole,
+      studentId: finalRole === 'student' ? studentId : undefined,
+      klass: finalRole === 'student' ? klass : undefined,
+      grade: finalRole === 'student' ? grade : undefined,
       showRealInfo: false,
     };
     completeProfile(u);
@@ -92,6 +108,13 @@ export default function LoginPage() {
           <div className="mb-3 flex gap-2">
             <Button type="button" variant={role === 'student' ? 'default' : 'secondary'} className="flex-1" onClick={() => setRole('student')}>我是学生</Button>
             <Button type="button" variant={role === 'teacher' ? 'default' : 'secondary'} className="flex-1" onClick={() => setRole('teacher')}>我是老师</Button>
+          </div>
+          <div className="mb-3 rounded-xl bg-amber-50 p-3 text-center text-xs font-bold text-amber-700">
+            ⚠️ 注册完成后真实姓名/学号/班级等信息不可修改，请仔细确认！
+          </div>
+          <div className="mb-2">
+            <label className="mb-1 block text-xs font-bold text-muted-foreground">邀请码（选填，输入即可成为管理员）</label>
+            <Input placeholder="选填" value={inviteCode} onChange={(e) => setInviteCode(e.target.value.toUpperCase())} />
           </div>
           <div className="space-y-2">
             <div>

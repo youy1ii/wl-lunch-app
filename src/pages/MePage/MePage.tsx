@@ -14,14 +14,18 @@ import {
   X,
   Bell,
   UserRound,
+  Mail,
+  UtensilsCrossed,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import CropModal from '@/components/CropModal';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
 import { TIERS } from '@/lib/mock-data';
 import type { Lang } from '@/lib/types';
 
 export default function MePage() {
-  const { user, isAdmin, settings, setSettings, logout, dishes, followees, updateUserProfile, frames, myFrameId, setActiveFrame, profileHeader, setHeaderImage } = useApp();
+  const { user, isAdmin, settings, setSettings, logout, dishes, followees, updateUserProfile, frames, myFrameId, setActiveFrame, profileHeader, setHeaderImage, feedbacks, replyFeedback, savedAccounts, switchAccount, redeemFrameCode } = useApp();
   const navigate = useNavigate();
   const [showMine, setShowMine] = useState(false);
   const [toast, setToast] = useState("");
@@ -37,6 +41,12 @@ export default function MePage() {
   const [cropTarget, setCropTarget] = useState<'avatar' | 'header'>('avatar');
   const [showBioEdit, setShowBioEdit] = useState(false);
   const [bioDraft, setBioDraft] = useState('');
+  const [frameCode, setFrameCode] = useState('');
+  const isOwner = user?.uid === '00000000';
+  const hasAdminAccess = isAdmin || user?.username === 'WLLC2026' || isOwner;
+  const effectiveFrameId = myFrameId || (isOwner ? 'beta' : isAdmin ? 'gold' : '');
+  const [showSwitchAccount, setShowSwitchAccount] = useState(false);
+  const pendingCount = feedbacks.filter((f) => f.status === 'pending').length;
   const fileRef = useRef<HTMLInputElement>(null);
   const headerRef = useRef<HTMLInputElement>(null);
 
@@ -52,7 +62,11 @@ export default function MePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => { updateUserProfile({ avatar: reader.result as string }); showToast('头像上传成功'); };
+    reader.onload = () => {
+      updateUserProfile({ avatar: reader.result as string }).then((ok) => {
+        showToast(ok ? '头像上传成功' : '头像保存失败，请重试');
+      });
+    };
     reader.readAsDataURL(file);
   };
   const onPickHeader = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,7 +86,9 @@ export default function MePage() {
     { icon: MessageSquare, label: t(settings.lang, 'feedback'), to: '/feedback' },
     { icon: Heart, label: t(settings.lang, 'tips'), to: '/tips' },
     { icon: Palette, label: t(settings.lang, 'appearance'), to: '/appearance' },
-    ...(isAdmin ? [{ icon: Shield, label: t(settings.lang, 'admin'), to: '/admin' }] : []),
+    ...(hasAdminAccess ? [{ icon: Shield, label: t(settings.lang, 'admin'), to: '/admin' }] : []),
+    ...(hasAdminAccess ? [{ icon: Mail, label: t(settings.lang, 'feedbackInbox'), to: '/feedback-inbox', badge: pendingCount }] : []),
+    ...(hasAdminAccess ? [{ icon: UtensilsCrossed, label: '菜品管理', to: '/dish-admin' }] : []),
   ];
 
   return (
@@ -86,15 +102,15 @@ export default function MePage() {
           )}
           <div
             className={
-              myFrameId === 'gold'
-                ? 'rounded-full p-1 ring-4 ring-amber-400 shadow-amber-300/60 shadow-lg'
-                : myFrameId === 'rainbow'
-                  ? 'rounded-full p-1 shadow-lg'
-                  : myFrameId === 'beta'
-                    ? 'rounded-full p-1 ring-4 ring-emerald-400 shadow-emerald-300/60 shadow-lg'
+              effectiveFrameId === 'gold'
+                ? 'rounded-full p-1 bg-amber-400 shadow-[0_0_12px_3px_rgba(251,191,36,0.5),0_0_24px_6px_rgba(251,191,36,0.25)]'
+                : effectiveFrameId === 'rainbow'
+                  ? 'rounded-full p-1 shadow-xl'
+                  : effectiveFrameId === 'beta'
+                    ? 'rounded-full p-1 bg-emerald-400 shadow-[0_0_12px_3px_rgba(52,211,153,0.5),0_0_24px_6px_rgba(52,211,153,0.25)]'
                     : 'p-1'
             }
-            style={myFrameId === 'rainbow' ? { background: 'conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)' } : undefined}
+            style={effectiveFrameId === 'rainbow' ? { background: 'conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)' } : undefined}
           >
           <label className="pressable flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-primary text-4xl">
             {user?.avatar?.startsWith('data:') ? (
@@ -106,21 +122,31 @@ export default function MePage() {
           </label>
           </div>
         </div>
-        <div className="mt-3 flex items-center justify-center gap-2 text-lg font-black">{user?.realName ?? user?.username}{isAdmin && <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">管理员</span>}</div>
+        <div className="mt-3 flex items-center justify-center gap-2 text-lg font-black">
+          {user?.nickname || user?.username}
+          {(isAdmin || isOwner) && (
+            <span className={
+              "inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-black shadow-sm " +
+              (isOwner ? "bg-emerald-500 text-white shadow-emerald-400/50" : "bg-amber-500 text-white shadow-amber-400/50")
+            }>
+              {isOwner ? '总管理员' : '管理员'}
+            </span>
+          )}
+        </div>
         <button type="button" className="pressable mt-0.5 text-[10px] text-muted-foreground" onClick={() => { if (user?.uid) { navigator.clipboard.writeText(user.uid); showToast("UID已复制"); } }}>UID: {user?.uid}</button>
         <div className="mt-1 text-xs text-muted-foreground">
-          {user?.role === 'student' ? `${user.grade ?? ''}${user.klass ?? ''}学生` : '管理员'}
+          {user?.role === 'student' ? `${user.grade ?? ''}${user.klass ?? ''}学生` : (isOwner ? '总管理员' : '管理员')}
         </div>
         <div className="mt-4 flex items-center gap-6 text-center">
-          <div>
+          <button type="button" className="pressable" onClick={() => setShowFollowing(true)}>
             <div className="text-lg font-black">{followees.length}</div>
             <div className="text-[10px] text-muted-foreground">关注</div>
-          </div>
+          </button>
           <div className="h-6 w-px bg-border" />
-          <div>
+          <button type="button" className="pressable" onClick={() => setShowFollowers(true)}>
             <div className="text-lg font-black">0</div>
             <div className="text-[10px] text-muted-foreground">粉丝</div>
-          </div>
+          </button>
           <div className="h-6 w-px bg-border" />
           <button type="button" className="pressable" onClick={() => setShowMine(true)}>
             <div className="text-lg font-black">{myCount}</div>
@@ -149,9 +175,10 @@ export default function MePage() {
 
       {/* 我的评价弹层 */}
       {showMine && createPortal(
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setShowMine(false)}>
+        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowMine(false)}>
           <div
-            className="anim-rise card-solid max-h-[70%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5"
+            className="anim-rise card-solid max-h-[75%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5"
+            style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
@@ -181,8 +208,8 @@ export default function MePage() {
       )}
 
       {showFollowers && createPortal(
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setShowFollowers(false)}>
-          <div className="anim-rise card-solid max-h-[70%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowFollowers(false)}>
+          <div className="anim-rise card-solid max-h-[75%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }} onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-black">粉丝</h3>
               <button type="button" onClick={() => setShowFollowers(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
@@ -194,8 +221,8 @@ export default function MePage() {
       )}
 
       {showFollowing && createPortal(
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setShowFollowing(false)}>
-          <div className="anim-rise card-solid max-h-[70%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowFollowing(false)}>
+          <div className="anim-rise card-solid max-h-[75%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }} onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-black">关注</h3>
               <button type="button" onClick={() => setShowFollowing(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
@@ -233,15 +260,16 @@ export default function MePage() {
       </div>
 
       <div className="card-solid mt-3 overflow-hidden rounded-2xl shadow-sm">
-        {rows.map((row) => (
+        {rows.map((row, idx) => (
           <button
-            key={row.to}
+            key={row.label + idx}
             type="button"
-            onClick={() => navigate(row.to)}
+            onClick={() => { if (row.to) navigate(row.to); }}
             className="pressable flex w-full items-center gap-3 border-b border-border px-4 py-3.5 text-left last:border-0"
           >
             <row.icon size={18} className="text-muted-foreground" />
             <span className="flex-1 text-sm">{row.label}</span>
+            {row.badge ? (<span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destruct-foreground">{row.badge > 99 ? '99+' : row.badge}</span>) : null}
             <ChevronRight size={16} className="text-muted-foreground" />
           </button>
         ))}
@@ -265,19 +293,21 @@ export default function MePage() {
 
       {/* 编辑资料弹层 */}
       {showEdit && createPortal(
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setShowEdit(false)}>
+        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowEdit(false)}>
           <div
             className="anim-rise max-h-[80%] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl"
+            style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-black">编辑资料</h3>
               <button type="button" onClick={() => setShowEdit(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
             </div>
-            <label className="mb-1 block text-xs font-bold text-muted-foreground">昵称</label>
+            <label className="mb-1 block text-xs font-bold text-muted-foreground">昵称（别人看到的名字）</label>
             <input
-              defaultValue={user?.realName ?? ''}
-              onBlur={(e) => updateUserProfile({ realName: e.target.value })}
+              defaultValue={user?.nickname ?? ''}
+              onBlur={(e) => { updateUserProfile({ nickname: e.target.value }); showToast('昵称已保存'); }}
+              placeholder="给自己起个昵称"
               className="mb-3 w-full rounded-xl bg-muted px-3 py-2 text-sm outline-none"
             />
             <label className="mb-1 block text-xs font-bold text-muted-foreground">个性签名</label>
@@ -302,9 +332,10 @@ export default function MePage() {
 
       {/* 隐私设置弹层 */}
       {showPrivacy && createPortal(
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setShowPrivacy(false)}>
+        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowPrivacy(false)}>
           <div
             className="anim-rise max-h-[80%] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl"
+            style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
@@ -336,19 +367,40 @@ export default function MePage() {
 
       {/* 头像框选择弹层 */}
       {showFrames && createPortal(
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setShowFrames(false)}>
+        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowFrames(false)}>
           <div
             className="anim-rise max-h-[80%] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl"
+            style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-black">✨ 头像框装扮</h3>
               <button type="button" onClick={() => setShowFrames(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
             </div>
+            <div className="mb-3 flex gap-2">
+              <input
+                value={frameCode}
+                onChange={(e) => setFrameCode(e.target.value.toUpperCase())}
+                placeholder="输入兑换码"
+                className="flex-1 rounded-xl bg-muted px-3 py-2 text-xs outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!frameCode.trim()) return;
+                  const res = redeemFrameCode(frameCode.trim(), user?.username || '');
+                  showToast(res.msg);
+                  if (res.ok) setFrameCode('');
+                }}
+                className="pressable rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+              >
+                兑换
+              </button>
+            </div>
             <div className="grid grid-cols-3 gap-3">
               {frames.map((fr) => {
                 const owned = fr.issuedTo.includes(user?.username ?? '');
-                const active = myFrameId === fr.id;
+                const active = effectiveFrameId === fr.id;
                 return (
                   <button
                     key={fr.id}
@@ -416,7 +468,7 @@ export default function MePage() {
 
       {/* 个性签名编辑弹层 */}
       {showBioEdit && createPortal(
-        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50" onClick={() => setShowBioEdit(false)}>
+        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowBioEdit(false)}>
           <div className="anim-rise w-full max-w-md rounded-t-3xl bg-card p-5" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-black">个性签名</h3>
@@ -442,14 +494,41 @@ export default function MePage() {
         document.body,
       )}
 
+      {hasAdminAccess && (
       <button
         type="button"
-        onClick={logout}
-        className="card-solid pressable mt-4 flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-destructive shadow-sm"
+        onClick={() => setShowSwitchAccount(true)}
+        className="card-solid pressable mt-4 flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-destructive shadow-sm ring-1 ring-destructive/20"
       >
         <LogOut size={16} />
-        {t(settings.lang, 'logout')}
+        {t(settings.lang, 'switchAccount')} / {t(settings.lang, 'logout')}
       </button>
+      )}
+
+      {showSwitchAccount && createPortal(
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50" onClick={() => setShowSwitchAccount(false)}>
+          <div className="anim-rise card-solid w-full max-w-md rounded-t-3xl p-5" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-3 text-center text-sm font-black">{t(settings.lang, 'switchAccount')}</h3>
+            {savedAccounts.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">{t(settings.lang, 'noSavedAccounts')}</p>}
+            {savedAccounts.map((acc) => (
+              <button key={acc.user.uid} type="button" onClick={() => { switchAccount(acc.user.uid || ''); setShowSwitchAccount(false); }} className="pressable mb-2 flex w-full items-center gap-3 rounded-xl bg-muted p-3 text-left">
+                <div className={"flex h-10 w-10 items-center justify-center rounded-full text-sm font-black " + (acc.user.uid === '00000000' ? 'bg-emerald-400 glow-mint text-white' : acc.isAdmin ? 'bg-primary text-primary-foreground' : 'bg-primary/20 text-primary')}>
+                  {acc.user.username?.slice(0, 1).toUpperCase() || '?'}
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-bold">{acc.user.username}</div>
+                  <div className="text-[10px] text-muted-foreground">UID: {acc.user.uid}</div>
+                </div>
+                {acc.user.uid === user?.uid && <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">{t(settings.lang, 'currentAccount')}</span>}
+              </button>
+            ))}
+            <button type="button" onClick={() => { logout(); setShowSwitchAccount(false); }} className="pressable mt-2 w-full rounded-xl border border-border py-2.5 text-sm font-bold text-foreground">
+              {t(settings.lang, 'registerNewAccount')}
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
 
       {/* 低调版权 */}
       <p className="mt-auto pb-4 pt-6 text-center text-[10px] leading-relaxed text-muted-foreground/60">

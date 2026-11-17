@@ -39,7 +39,7 @@ export default function DishesPage() {
         return true;
       })
       .filter((d) => (ratedOnly ? myRatings[d.id] !== undefined : true))
-      .sort((a, b) => avgOf(b) - avgOf(a));
+      .sort(() => Math.random() - 0.5);
   }, [dishes, win, query, price, meat, ratedOnly, myRatings]);
 
   const chip = (active: boolean) =>
@@ -168,8 +168,9 @@ export default function DishesPage() {
                     {avg.toFixed(1)}
                   </span>
                 </div>
-                <div className="text-[10px] text-muted-foreground">
-                  {votesOf(d)} {t(settings.lang, 'votes')}
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>{votesOf(d)} {t(settings.lang, 'votes')}</span>
+                  {d.launchDate && <span>{t(settings.lang, 'launchOn')} {d.launchDate.slice(5).replace('-', '/')}</span>}
                 </div>
               </div>
             </button>
