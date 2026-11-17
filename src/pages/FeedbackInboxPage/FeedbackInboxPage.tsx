@@ -55,7 +55,7 @@ export default function FeedbackInboxPage() {
             {f.status === 'pending' ? (
               <div className="mt-2 flex gap-1">
                 <input value={replyText[f.id] || ''} onChange={(e) => setReplyText({ ...replyText, [f.id]: e.target.value })} placeholder={t(settings.lang, 'reply')} className="flex-1 rounded-lg bg-muted px-2 py-1 outline-none" />
-                <button type="button" onClick={() => { const v = replyText[f.id]?.trim(); if (v) { replyFeedback(f.id, v).then((ok) => { if (ok) { setReplyText({ ...replyText, [f.id]: '' }); toast.success('回复已发送'); } else toast.error('回复失败，请检查网络后重试'); }); } }} className="pressable rounded-lg bg-primary px-3 text-primary-foreground">{t(settings.lang, 'send')}</button>
+                <button type="button" onClick={() => { const v = replyText[f.id]?.trim(); if (v) { replyFeedback(f.id, v).then((ok) => { if (ok) { setReplyText({ ...replyText, [f.id]: '' }); toast.success('回复已发送'); } else toast.error('PRTS代理指挥失败。请检查网络再次尝试'); }); } }} className="pressable rounded-lg bg-primary px-3 text-primary-foreground">{t(settings.lang, 'send')}</button>
               </div>
             ) : (
               <div className="mt-2 border-t border-border pt-2">

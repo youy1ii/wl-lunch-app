@@ -37,7 +37,7 @@ export default function DishAdminPage() {
               if (!name.trim() || !price) return;
               addDish(name.trim(), Number(price), win).then((ok) => {
                 if (ok) { setName(''); setPrice(''); toast.success('菜品已添加'); }
-                else toast.error('菜品添加失败，请检查网络后重试');
+                else toast.error('PRTS代理指挥失败。请检查网络再次尝试');
               });
             }}
             className="rounded-lg bg-primary p-2 text-primary-foreground"
@@ -67,7 +67,7 @@ export default function DishAdminPage() {
               >
                 {d.isNew ? '取消新品' : '标新品'}
               </button>
-              <button type="button" onClick={() => { deleteDish(d.id).then((ok) => ok ? toast.success('已删除') : toast.error('删除失败，请重试')); }} className="ml-2 text-destructive">
+              <button type="button" onClick={() => { deleteDish(d.id).then((ok) => ok ? toast.success('已删除') : toast.error('PRTS代理指挥失败。请检查网络再次尝试')); }} className="ml-2 text-destructive">
                 <Trash2 size={14} />
               </button>
             </div>

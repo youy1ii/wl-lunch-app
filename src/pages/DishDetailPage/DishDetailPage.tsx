@@ -67,7 +67,7 @@ export default function DishDetailPage() {
         setText('');
         toast.success('打分成功！你的评价已上榜');
       } else {
-        toast.error('打分失败，请检查网络后重试');
+        toast.error('PRTS代理指挥失败。请检查网络再次尝试');
       }
     });
   };
@@ -375,7 +375,7 @@ export default function DishDetailPage() {
                             if (!dmText.trim()) return;
                             sendAdminMessage(r.author, dmText.trim()).then((ok) => {
                               if (ok) { toast.success(`已私信 ${r.author}`); setDmTo(null); setDmText(''); }
-                              else toast.error('发送失败，请检查网络后重试');
+                              else toast.error('PRTS代理指挥失败。请检查网络再次尝试');
                             });
                           }}
                         >
@@ -547,9 +547,9 @@ export default function DishDetailPage() {
                   const target = confirm;
                   setConfirm(null);
                   if (target.kind === 'delete') {
-                    deleteReview(dish.id, target.reviewId).then((ok) => ok ? toast.success('评价已删除') : toast.error('删除失败，请重试'));
+                    deleteReview(dish.id, target.reviewId).then((ok) => ok ? toast.success('评价已删除') : toast.error('PRTS代理指挥失败。请检查网络再次尝试'));
                   } else if (target.uid) {
-                    banUser(target.uid).then((ok) => ok ? toast.success(`已封禁 ${target.author}`) : toast.error('封禁失败，请重试'));
+                    banUser(target.uid).then((ok) => ok ? toast.success(`已封禁 ${target.author}`) : toast.error('PRTS代理指挥失败。请检查网络再次尝试'));
                   } else {
                     toast.error('该用户缺少 UID，无法封禁');
                   }

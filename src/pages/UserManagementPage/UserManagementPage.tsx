@@ -43,7 +43,7 @@ export default function UserManagementPage() {
                   if (!targetUid.trim()) { toast.error('请输入UID'); return; }
                   banUser(targetUid.trim()).then((ok) => {
                     if (ok) { toast.success(`已封禁用户 ${targetUid.trim()}`); setTargetUid(''); setMessage(''); }
-                    else toast.error('封禁失败，请检查 UID 后重试');
+                    else toast.error('PRTS代理指挥失败。请检查网络再次尝试');
                   });
                 }}
                 className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-destructive py-2.5 text-xs font-bold text-destructive-foreground pressable"
@@ -58,7 +58,7 @@ export default function UserManagementPage() {
                   if (!message.trim()) { toast.error('请输入私信内容'); return; }
                   sendAdminMessage(targetUid.trim(), message.trim()).then((ok) => {
                     if (ok) { toast.success(`已发送私信给 ${targetUid.trim()}`); setTargetUid(''); setMessage(''); }
-                    else toast.error('发送失败，请检查 UID 后重试');
+                    else toast.error('PRTS代理指挥失败。请检查网络再次尝试');
                   });
                 }}
                 className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary py-2.5 text-xs font-bold text-primary-foreground pressable"

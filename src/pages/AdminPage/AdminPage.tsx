@@ -257,7 +257,7 @@ export default function AdminPage() {
                 if (!name.trim() || !price) return;
                 addDish(name.trim(), Number(price), win).then((ok) => {
                   if (ok) { setName(''); setPrice(''); toast.success(t(settings.lang, 'saved')); }
-                  else toast.error('菜品添加失败，请检查网络后重试');
+                  else toast.error('PRTS代理指挥失败。请检查网络再次尝试');
                 });
               }}
               className="rounded-lg bg-primary p-2 text-white"
@@ -346,7 +346,7 @@ export default function AdminPage() {
                 if (ok) {
                   setAnnTitle(''); setAnnBody(''); setAnnImage(''); setAnnLink('');
                   toast.success('公告发布成功，所有设备同步');
-                } else toast.error('公告发布失败，请检查网络后重试');
+                } else toast.error('PRTS代理指挥失败。请检查网络再次尝试');
               });
             }}
             className="mt-2 w-full rounded-lg bg-primary py-2 text-sm font-bold text-primary-foreground"
@@ -372,7 +372,7 @@ export default function AdminPage() {
                 if (!tickerDraft.trim()) return;
                 setTicker(tickerDraft.trim()).then((ok) => {
                   if (ok) { setTickerDraft(''); toast.success(t(settings.lang, 'saved')); }
-                  else toast.error('发布失败，请检查网络后重试');
+                  else toast.error('PRTS代理指挥失败。请检查网络再次尝试');
                 });
               }}
               className="rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"
@@ -407,7 +407,7 @@ export default function AdminPage() {
               if (!dmText.trim()) return;
               sendAdminMessage(dmTarget.trim(), dmText.trim()).then((ok) => {
                 if (ok) { setDmTarget(''); setDmText(''); toast.success('已发送'); }
-                else toast.error('发送失败，请检查网络后重试');
+                else toast.error('PRTS代理指挥失败。请检查网络再次尝试');
               });
             }}
             className="mt-2 w-full rounded-lg bg-primary py-2 text-sm font-bold text-primary-foreground"
@@ -519,7 +519,7 @@ export default function AdminPage() {
                 if (ok) {
                   setBannerTitle(''); setBannerTarget(''); setBannerImage('');
                   toast.success('海报发布成功，所有设备同步');
-                } else toast.error('海报发布失败，请检查网络后重试');
+                } else toast.error('PRTS代理指挥失败。请检查网络再次尝试');
               });
             }}
             className="w-full rounded-lg bg-primary py-2 text-sm font-bold text-white"

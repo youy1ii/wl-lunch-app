@@ -64,7 +64,7 @@ export default function MePage() {
     const reader = new FileReader();
     reader.onload = () => {
       updateUserProfile({ avatar: reader.result as string }).then((ok) => {
-        showToast(ok ? '头像上传成功' : '头像保存失败，请重试');
+        showToast(ok ? '头像上传成功' : 'PRTS代理指挥失败。请检查网络再次尝试');
       });
     };
     reader.readAsDataURL(file);

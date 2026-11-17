@@ -20,7 +20,7 @@ export default function FeedbackPage() {
         toast.success('提交成功，管理员会尽快查看');
         setText('');
       } else {
-        toast.error('提交失败，请检查网络后重试');
+        toast.error('PRTS代理指挥失败。请检查网络再次尝试');
       }
     });
   };
