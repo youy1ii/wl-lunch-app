@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppStore, type AppStoreValue } from '@/lib/store-context';
-import { MOCK_ANNOUNCEMENTS, MOCK_BANNERS, MOCK_DISHES } from '@/lib/mock-data';
+import { MOCK_ANNOUNCEMENTS, MOCK_BANNERS } from '@/lib/mock-data';
 import { supabase } from '@/lib/supabase';
 import type {
   IBanner,
@@ -16,6 +16,29 @@ import type {
 const ADMIN_ACCOUNT = 'WLLC2026';
 const ADMIN_PASSWORD = 'iloveWL';
 const NS = 'wl-lunch';
+
+/* 已处理反馈保留 30 天，到期自动删除。
+   不用常驻定时器（会占运行内存）：每次 loadAll 顺带判断，localStorage 节流一天最多清一次库。 */
+const FEEDBACK_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+function isExpiredFeedback(r: any): boolean {
+  if (r.status !== 'replied') return false;
+  const stamp = r.replied_at || r.created_at;
+  if (!stamp) return false;
+  const t = new Date(stamp).getTime();
+  return Number.isFinite(t) && Date.now() - t > FEEDBACK_TTL_MS;
+}
+
+function shouldSweepFeedback(): boolean {
+  try {
+    const last = Number(localStorage.getItem(`${NS}:fb-sweep`) || 0);
+    return Date.now() - last > SWEEP_INTERVAL_MS;
+  } catch { return true; }
+}
+function markFeedbackSwept() {
+  try { localStorage.setItem(`${NS}:fb-sweep`, String(Date.now())); } catch {}
+}
 
 /* ============================================================
    共享数据架构
@@ -102,7 +125,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
   const [profileHeader, setProfileHeader] = useState<string>('');
   const [isAdmin, setIsAdmin] = useState(initial.isAdmin);
   const [pendingLoginName, setPendingLoginName] = useState<string>('');
-  const [dishes, setDishes] = useState<IDish[]>(MOCK_DISHES);
+  const [dishes, setDishes] = useState<IDish[]>([]);
   const [announcements, setAnnouncements] = useState<IAnnouncement[]>(MOCK_ANNOUNCEMENTS);
   const [banners, setBannersState] = useState<IBanner[]>(MOCK_BANNERS);
   const [feedbacks, setFeedbacks] = useState<IFeedback[]>([]);
@@ -292,16 +315,17 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
       const p = jparse(r.text);
       if (p.dishId != null && p.date) launchMap[p.dishId] = p.date;
     });
-    if (dishRows.length > 0) {
-      setDishes(buildDishes(dishRows, ratingRows, uid, likeRes.data || [], replyRes.data || [], launchMap));
-    }
+    // 数据库有多少就显示多少，删空后就是真空状态（不再用假数据填充）
+    setDishes(buildDishes(dishRows, ratingRows, uid, likeRes.data || [], replyRes.data || [], launchMap));
     const mine: Record<number, number> = {};
     if (uid) ratingRows.forEach((r: any) => { if (r.user_uid === uid) mine[r.dish_id] = r.tier; });
     setMyRatings(mine);
 
-    // 反馈
+    // 反馈：先本地过滤掉过期的已处理反馈（界面立即不显示），再按节流清理数据库
     if (!fbRes.error) {
-      setFeedbacks((fbRes.data || []).map((r: any) => ({
+      const allFeedback = fbRes.data || [];
+      const activeFeedback = allFeedback.filter((r: any) => !isExpiredFeedback(r));
+      setFeedbacks(activeFeedback.map((r: any) => ({
         id: Number(r.id), kind: r.kind === 'complain' ? 'complain' : 'suggest',
         text: r.text || '', anonymous: !!r.anonymous,
         status: r.status === 'replied' ? 'replied' : 'pending',
@@ -311,6 +335,14 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
         authorRealName: r.anonymous ? '' : (r.author_real_name || ''),
         adminRep: r.admin_rep || undefined, repliedAt: r.replied_at || undefined,
       } as IFeedback)));
+
+      // 过期记录真删除：仅在有过期数据时、且距上次清理超过一天才执行。
+      // fire-and-forget，不阻塞界面、无常驻定时器、不占运行内存。
+      const expiredIds = allFeedback.filter(isExpiredFeedback).map((r: any) => r.id);
+      if (expiredIds.length > 0 && shouldSweepFeedback()) {
+        markFeedbackSwept();
+        supabase.from('feedbacks').delete().in('id', expiredIds).then(() => {});
+      }
     }
 
     // 通知：定向 / 全员广播 / 管理员组
