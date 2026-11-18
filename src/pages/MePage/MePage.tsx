@@ -88,7 +88,7 @@ export default function MePage() {
     { icon: Palette, label: t(settings.lang, 'appearance'), to: '/appearance' },
     ...(hasAdminAccess ? [{ icon: Shield, label: t(settings.lang, 'admin'), to: '/admin' }] : []),
     ...(hasAdminAccess ? [{ icon: Mail, label: t(settings.lang, 'feedbackInbox'), to: '/feedback-inbox', badge: pendingCount }] : []),
-    ...(hasAdminAccess ? [{ icon: UtensilsCrossed, label: '菜品管理', to: '/dish-admin' }] : []),
+    ...(hasAdminAccess ? [{ icon: UtensilsCrossed, label: t(settings.lang, 'adminDishes'), to: '/dish-admin' }] : []),
   ];
 
   return (
@@ -240,7 +240,7 @@ export default function MePage() {
           className="pressable flex w-full items-center gap-3 border-b border-border px-4 py-3.5 text-left"
         >
           <UserRound size={18} className="text-muted-foreground" />
-          <span className="flex-1 text-sm">编辑资料</span>
+          <span className="flex-1 text-sm">{t(settings.lang, 'editProfile')}</span>
           <ChevronRight size={16} className="text-muted-foreground" />
         </button>
         <button
@@ -249,12 +249,12 @@ export default function MePage() {
           className="pressable flex w-full items-center gap-3 border-b border-border px-4 py-3.5 text-left"
         >
           <ShieldCheck size={18} className="text-muted-foreground" />
-          <span className="flex-1 text-sm">隐私设置</span>
+          <span className="flex-1 text-sm">{t(settings.lang, 'privacySettings')}</span>
           <ChevronRight size={16} className="text-muted-foreground" />
         </button>
         <div className="flex w-full items-center gap-3 border-b border-border px-4 py-3.5">
           <Bell size={18} className="text-muted-foreground" />
-          <span className="flex-1 text-sm">通知提醒</span>
+          <span className="flex-1 text-sm">{t(settings.lang, 'notifications')}</span>
           <input type="checkbox" checked={notifOn} onChange={(e) => setNotifOn(e.target.checked)} />
         </div>
       </div>
@@ -300,7 +300,7 @@ export default function MePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-black">编辑资料</h3>
+              <h3 className="text-sm font-black">{t(settings.lang, 'editProfile')}</h3>
               <button type="button" onClick={() => setShowEdit(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
             </div>
             <label className="mb-1 block text-xs font-bold text-muted-foreground">昵称（别人看到的名字）</label>
@@ -339,7 +339,7 @@ export default function MePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-black">隐私设置</h3>
+              <h3 className="text-sm font-black">{t(settings.lang, 'privacySettings')}</h3>
               <button type="button" onClick={() => setShowPrivacy(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
             </div>
             {[

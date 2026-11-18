@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ChevronLeft, Heart, ChevronDown, Send, ShieldBan, CalendarDays } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
-import { avgOf, tierOf, votesOf, TIERS } from '@/lib/mock-data';
+import { avgOf, tierOf, tierLabel, votesOf, TIERS } from '@/lib/mock-data';
 import { t } from '@/lib/i18n';
 import RatingSlider from '@/components/RatingSlider';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -113,7 +113,7 @@ export default function DishDetailPage() {
               className="tier-giant transition-all duration-300"
               style={{ color: tier.color, fontSize: `${64 - p * 28}px` }}
             >
-              {tier.label}
+              {tierLabel(tier.score, settings.lang)}
             </div>
             <div className="mt-2 text-2xl font-black">
               {avg.toFixed(1)}
@@ -127,7 +127,7 @@ export default function DishDetailPage() {
                 className="mt-2 rounded-full px-3 py-1 text-xs font-black text-white"
                 style={{ background: TIERS[5 - myRatings[dish.id]].color }}
               >
-                我评了 {myRatings[dish.id]} 分 · {TIERS[5 - myRatings[dish.id]].label}
+                我评了 {myRatings[dish.id]} 分 · {tierLabel(myRatings[dish.id], settings.lang)}
               </div>
             )}
 
@@ -145,7 +145,7 @@ export default function DishDetailPage() {
                 {TIERS.map((tt, i) => (
                   <div key={tt.score} className="flex items-center gap-2 text-xs">
                     <span className="w-12 shrink-0 font-bold" style={{ color: tt.color }}>
-                      {tt.label}
+                      {tierLabel(tt.score, settings.lang)}
                     </span>
                     <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                       <div
@@ -239,7 +239,7 @@ export default function DishDetailPage() {
                       className="anim-pop rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
                       style={{ background: TIERS[5 - r.tier].color }}
                     >
-                      {TIERS[5 - r.tier].label}
+                      {tierLabel(r.tier, settings.lang)}
                     </span>
                   </div>
                   <p className="mt-1.5 text-sm leading-relaxed">{r.text}</p>

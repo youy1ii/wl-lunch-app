@@ -81,6 +81,7 @@ export interface IFeedback {
   authorRealName?: string;
   adminRep?: string;
   repliedAt?: string;
+  createdAt?: string;
 }
 
 export interface IUser {

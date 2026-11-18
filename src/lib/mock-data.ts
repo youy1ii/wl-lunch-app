@@ -1,6 +1,7 @@
-// EXPORTS: TIERS, WINDOWS, avgOf, tierIndexOf, tierOf, MOCK_DISHES, MOCK_ANNOUNCEMENTS, MOCK_BANNERS
+// EXPORTS: TIERS, WINDOWS, avgOf, tierIndexOf, tierOf, tierLabel, MOCK_DISHES, MOCK_ANNOUNCEMENTS, MOCK_BANNERS
 
-import type { IDish, IReview, IAnnouncement, IBanner, WindowId } from './types';
+import type { IDish, IReview, IAnnouncement, IBanner, WindowId, Lang } from './types';
+import { t } from './i18n';
 
 // EXPORTS: ITier{score,label,color,bg}
 export interface ITier {
@@ -54,6 +55,11 @@ export function tierIndexOf(avg: number): number {
 
 export function tierOf(avg: number): ITier {
   return TIERS[tierIndexOf(avg)];
+}
+
+// 按界面语言取段位标签（score 5→1 对应 tier5→tier1）
+export function tierLabel(score: number, lang: Lang): string {
+  return t(lang, `tier${score}`);
 }
 
 // deterministic pseudo-random

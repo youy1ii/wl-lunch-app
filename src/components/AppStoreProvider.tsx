@@ -334,6 +334,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
         authorUid: r.author_uid || undefined,
         authorRealName: r.anonymous ? '' : (r.author_real_name || ''),
         adminRep: r.admin_rep || undefined, repliedAt: r.replied_at || undefined,
+        createdAt: r.created_at || undefined,
       } as IFeedback)));
 
       // 过期记录真删除：仅在有过期数据时、且距上次清理超过一天才执行。

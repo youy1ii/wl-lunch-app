@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Trophy, ThumbsDown, Megaphone, Bell, Users } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
 import type { INotification } from '@/lib/types';
-import { avgOf, tierOf, votesOf } from '@/lib/mock-data';
+import { avgOf, tierOf, tierLabel, votesOf } from '@/lib/mock-data';
 import type { IDish } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
@@ -21,11 +21,13 @@ function PodiumBlock({
   list,
   good,
   onOpen,
+  lang,
 }: {
   title: string;
   list: IDish[];
   good: boolean;
   onOpen: (id: number) => void;
+  lang: 'zh' | 'ja' | 'en';
 }) {
   return (
     <div className="card-solid mt-4 rounded-2xl p-4 shadow-sm ring-1 ring-black/5">
@@ -69,7 +71,7 @@ function PodiumBlock({
                 className={cn('mt-1.5 flex w-full items-start justify-center rounded-t-lg pt-1 text-[10px] font-bold text-white/90 ring-1 ring-black/5', meta.barH)}
                 style={{ background: `linear-gradient(180deg, ${color}, ${color}99)` }}
               >
-                {tier.label}
+                {tierLabel(tier.score, lang)}
               </div>
             </button>
           );
@@ -285,8 +287,8 @@ export default function HomePage() {
 
       {/* 两个领奖台 */}
       <div className="flex-1 overflow-y-auto pb-4">
-        <PodiumBlock title={t(settings.lang, 'lovedTop3')} list={loves} good onOpen={(id) => navigate(`/dishes/${id}`)} />
-        <PodiumBlock title={t(settings.lang, 'hatedTop3')} list={hates} good={false} onOpen={(id) => navigate(`/dishes/${id}`)} />
+        <PodiumBlock title={t(settings.lang, 'lovedTop3')} list={loves} good lang={settings.lang} onOpen={(id) => navigate(`/dishes/${id}`)} />
+        <PodiumBlock title={t(settings.lang, 'hatedTop3')} list={hates} good={false} lang={settings.lang} onOpen={(id) => navigate(`/dishes/${id}`)} />
       </div>
 
       <AdminGroupChat open={showGroup} onClose={() => setShowGroup(false)} />
