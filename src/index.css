@@ -107,12 +107,19 @@ body {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
 }
+@keyframes wx-drop-in {
+  0% { opacity: 0; transform: translate(-50%, -120%) scale(0.9); }
+  60% { opacity: 1; transform: translate(-50%, 8px) scale(1.02); }
+  100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
 
 .anim-rise { animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-pop { animation: pop-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-page { animation: page-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-tier { animation: tier-zoom 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-float { animation: float-y 3s ease-in-out infinite; }
+/* 微信式消息弹窗：从顶部滑入 */
+.wx-notif { animation: wx-drop-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 html { scroll-behavior: smooth; overscroll-behavior: none; }
 

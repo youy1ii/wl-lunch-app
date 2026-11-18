@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/lib/store-context';
 import type { IFeedback } from '@/lib/types';
 import { t } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
+import { cn, isOwnerMark, isOwnerUser } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface Conversation {
@@ -30,21 +30,18 @@ function fmtTime(iso?: string): string {
   return d.toLocaleDateString([], { month: '2-digit', day: '2-digit' });
 }
 
-function Avatar({ name, admin, avatar }: { name: string; admin?: boolean; avatar?: string }) {
+// 总管理员头像固定薄荷绿 + 泛光，不受上传头像影响
+const OWNER_AVATAR_CLS = 'bg-emerald-400 text-white glow-mint';
+
+function Avatar({ name, admin }: { name: string; admin?: boolean }) {
   return (
     <div
       className={cn(
         'flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-black',
-        admin
-          ? 'bg-emerald-400 text-white ring-2 ring-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
-          : 'bg-amber-400/90 text-white ring-2 ring-amber-300',
+        admin ? OWNER_AVATAR_CLS : 'bg-amber-400/90 text-white ring-2 ring-amber-300',
       )}
     >
-      {avatar && admin && avatar.startsWith('data:') ? (
-        <img src={avatar} alt="" className="h-full w-full object-cover" />
-      ) : (
-        name.slice(0, 1).toUpperCase()
-      )}
+      {name.slice(0, 1).toUpperCase()}
     </div>
   );
 }
@@ -178,14 +175,14 @@ export default function FeedbackInboxPage() {
                     <div className="max-w-[75%]">
                       <div className="mb-0.5 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
                         {f.repliedAt && <span>{fmtTime(f.repliedAt)}</span>}
-                        <span className="font-bold">{user?.nickname || f.adminRep || '管理员'}</span>
-                        {f.adminRep === 'WLLC2026' && <span className="rounded bg-emerald-500 px-1 py-0.5 text-[8px] font-black text-white">总管理员</span>}
+                        <span className="font-bold" style={{ color: isOwnerMark(f.adminRep) ? 'var(--primary)' : undefined }}>{user?.nickname || f.adminRep || '管理员'}</span>
+                        {isOwnerMark(f.adminRep) && <span className="rounded bg-emerald-500 px-1 py-0.5 text-[8px] font-black text-white">总管理员</span>}
                       </div>
                       <div className="rounded-2xl rounded-tr-sm bg-primary px-3 py-2 text-left text-sm text-primary-foreground shadow-sm">
                         {f.reply}
                       </div>
                     </div>
-                    <Avatar name={(user?.nickname || f.adminRep || '管').slice(0, 1)} admin avatar={user?.avatar} />
+                    <Avatar name={(user?.nickname || f.adminRep || '管').slice(0, 1)} admin={isOwnerMark(f.adminRep) || isOwnerUser(user)} />
                   </div>
                 )}
               </div>

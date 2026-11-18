@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Trophy, UtensilsCrossed, UserRound } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
@@ -14,10 +14,13 @@ export default function AppShell() {
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [settling, setSettling] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
-  const [toast, setToast] = useState<string | null>(null);
+  type PopNotif = { text: string; kind: string };
+  const [toast, setToast] = useState<PopNotif | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const prevNotifCount = useRef(notifications.length);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const theme = settings.theme ?? 'dark';
@@ -28,8 +31,9 @@ export default function AppShell() {
   useEffect(() => {
     if (notifications.length > prevNotifCount.current) {
       const latest = notifications[notifications.length - 1];
-      setToast(latest.text);
-      setTimeout(() => setToast(null), 4000);
+      setToast({ text: latest.text, kind: latest.kind });
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 5000);
       prevNotifCount.current = notifications.length;
     } else {
       prevNotifCount.current = notifications.length;
@@ -180,14 +184,37 @@ export default function AppShell() {
         </div>
       )}
 
-      {/* 新通知顶部横幅 */}
-      {toast && (
-        <div className="fixed left-1/2 top-3 z-[200] w-[92%] max-w-md -translate-x-1/2 anim-pop">
-          <div className="rounded-2xl bg-primary px-4 py-3 text-center text-sm font-bold text-primary-foreground shadow-xl">
-            🔔 {toast}
+      {/* 微信风格新消息弹窗：从顶部滑入，点头像/卡片跳转对应页面 */}
+      {toast && (() => {
+        const meta: Record<string, { icon: string; title: string; color: string }> = {
+          like: { icon: '❤️', title: '点赞消息', color: 'bg-rose-500' },
+          reply: { icon: '💬', title: '评论回复', color: 'bg-sky-500' },
+          admin: { icon: '📢', title: '管理员通知', color: 'bg-emerald-500' },
+          feedback: { icon: '📬', title: '反馈回复', color: 'bg-violet-500' },
+        };
+        const m = meta[toast.kind] || { icon: '🔔', title: '新消息', color: 'bg-primary' };
+        const target = toast.kind === 'feedback' ? '/feedback' : toast.kind === 'admin' ? '/announcements' : '/me';
+        return (
+          <div
+            className="wx-notif fixed left-1/2 top-2 z-[200] w-[94%] max-w-md -translate-x-1/2 cursor-pointer"
+            onClick={() => { navigate(target); setToast(null); }}
+          >
+            <div className="flex items-center gap-3 rounded-2xl bg-card/95 px-3.5 py-3 shadow-2xl ring-1 ring-black/10 backdrop-blur-md">
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl text-white ${m.color}`}>
+                {m.icon}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-black">{m.title}</span>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">刚刚</span>
+                </div>
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{toast.text}</p>
+              </div>
+              <span className="shrink-0 text-[10px] font-bold text-primary">点击查看 ›</span>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       <main className="relative flex-1 overflow-y-auto pb-48">
         <div key={location.pathname} className="anim-page">

@@ -17,7 +17,7 @@ import {
   Mail,
   UtensilsCrossed,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, isOwnerUser } from '@/lib/utils';
 import CropModal from '@/components/CropModal';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
@@ -42,8 +42,8 @@ export default function MePage() {
   const [showBioEdit, setShowBioEdit] = useState(false);
   const [bioDraft, setBioDraft] = useState('');
   const [frameCode, setFrameCode] = useState('');
-  const isOwner = user?.uid === '00000000';
-  const hasAdminAccess = isAdmin || user?.username === 'WLLC2026' || isOwner;
+  const isOwner = isOwnerUser(user);
+  const hasAdminAccess = isAdmin || isOwner;
   const effectiveFrameId = myFrameId || (isOwner ? 'beta' : isAdmin ? 'gold' : '');
   const [showSwitchAccount, setShowSwitchAccount] = useState(false);
   const pendingCount = feedbacks.filter((f) => f.status === 'pending').length;

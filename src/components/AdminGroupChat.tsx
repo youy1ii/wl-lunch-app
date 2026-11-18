@@ -37,7 +37,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
   const [showAnnounceInput, setShowAnnounceInput] = useState(false);
   const [announceText, setAnnounceText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isOwner = user?.uid === OWNER_UID;
+  const isOwner = user?.uid === OWNER_UID || user?.username === 'WLLC2026';
 
   useEffect(() => {
     if (!open || !isAdmin) return;

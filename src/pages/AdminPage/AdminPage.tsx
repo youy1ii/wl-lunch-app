@@ -6,6 +6,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
+import { isOwnerUser } from '@/lib/utils';
 
 interface Entry {
   to: string;
@@ -24,7 +25,7 @@ interface Group {
 export default function AdminPage() {
   const navigate = useNavigate();
   const { settings, user } = useApp();
-  const isOwner = user?.uid === '00000000' || user?.username === 'WLLC2026';
+  const isOwner = isOwnerUser(user);
 
   const groups: Group[] = [
     {
