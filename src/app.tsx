@@ -12,6 +12,15 @@ import FeedbackPage from '@/pages/FeedbackPage/FeedbackPage';
 import TipsPage from '@/pages/TipsPage/TipsPage';
 import AppearancePage from '@/pages/AppearancePage/AppearancePage';
 import AdminPage from '@/pages/AdminPage/AdminPage';
+import ReportPage from '@/pages/AdminPages/ReportPage';
+import AdminAnnouncementsPage from '@/pages/AdminPages/AnnouncementsPage';
+import TickerPage from '@/pages/AdminPages/TickerPage';
+import BannerPage from '@/pages/AdminPages/BannerPage';
+import PinnedPage from '@/pages/AdminPages/PinnedPage';
+import AdminTipsPage from '@/pages/AdminPages/TipsPage';
+import FramesPage from '@/pages/AdminPages/FramesPage';
+import InvitePage from '@/pages/AdminPages/InvitePage';
+import DirectMessagePage from '@/pages/AdminPages/DirectMessagePage';
 import FeedbackInboxPage from '@/pages/FeedbackInboxPage/FeedbackInboxPage';
 import DishAdminPage from '@/pages/DishAdminPage/DishAdminPage';
 import UserManagementPage from '@/pages/UserManagementPage/UserManagementPage';
@@ -38,6 +47,15 @@ export default function App() {
         <Route path="tips" element={<TipsPage />} />
         <Route path="appearance" element={<AppearancePage />} />
         <Route path="admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
+        <Route path="admin/report" element={<AdminGuard><ReportPage /></AdminGuard>} />
+        <Route path="admin/announcements" element={<AdminGuard><AdminAnnouncementsPage /></AdminGuard>} />
+        <Route path="admin/ticker" element={<AdminGuard><TickerPage /></AdminGuard>} />
+        <Route path="admin/banner" element={<AdminGuard><BannerPage /></AdminGuard>} />
+        <Route path="admin/pinned" element={<AdminGuard><PinnedPage /></AdminGuard>} />
+        <Route path="admin/tips" element={<AdminGuard><AdminTipsPage /></AdminGuard>} />
+        <Route path="admin/frames" element={<AdminGuard><FramesPage /></AdminGuard>} />
+        <Route path="admin/invite" element={<AdminGuard><InvitePage /></AdminGuard>} />
+        <Route path="admin/dm" element={<AdminGuard><DirectMessagePage /></AdminGuard>} />
         <Route path="feedback-inbox" element={<AdminGuard><FeedbackInboxPage /></AdminGuard>} />
         <Route path="dish-admin" element={<AdminGuard><DishAdminPage /></AdminGuard>} />
         <Route path="user-management" element={<AdminGuard><UserManagementPage /></AdminGuard>} />
