@@ -196,7 +196,7 @@ export default function AppShell() {
         const target = toast.kind === 'feedback' ? '/feedback' : toast.kind === 'admin' ? '/announcements' : '/me';
         return (
           <div
-            className="wx-notif fixed left-1/2 top-2 z-[200] w-[94%] max-w-md -translate-x-1/2 cursor-pointer"
+            className="wx-notif fixed left-1/2 top-2 z-[260] w-[94%] max-w-md -translate-x-1/2 cursor-pointer"
             onClick={() => { navigate(target); setToast(null); }}
           >
             <div className="flex items-center gap-3 rounded-2xl bg-card/95 px-3.5 py-3 shadow-2xl ring-1 ring-black/10 backdrop-blur-md">
