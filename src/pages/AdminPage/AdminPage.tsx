@@ -59,40 +59,40 @@ export default function AdminPage() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 shadow-sm">
+      <div className="flex items-center gap-3 border-b border-border bg-card px-5 py-3.5 shadow-sm">
         <button type="button" onClick={() => navigate(-1)} className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-muted" aria-label="返回">
           <ChevronLeft size={20} />
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-black leading-tight">{t(settings.lang, 'admin')}</h1>
-          <p className="text-xs text-muted-foreground">管理后台 · 所有功能</p>
+          <h1 className="text-xl font-black leading-tight">{t(settings.lang, 'admin')}</h1>
+          <p className="text-sm text-muted-foreground">管理后台 · 所有功能</p>
         </div>
       </div>
 
-      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
+      <div className="flex-1 space-y-7 overflow-y-auto px-4 py-6">
         {groups.map((g) => {
           const items = g.items.filter((it) => !it.ownerOnly || isOwner);
           if (items.length === 0) return null;
           return (
             <section key={g.title}>
-              <h2 className="mb-2 px-1 text-xs font-bold text-muted-foreground">{g.title}</h2>
+              <h2 className="mb-3 px-1 text-sm font-bold text-muted-foreground">{g.title}</h2>
               <div className="card-solid overflow-hidden rounded-2xl shadow-sm">
                 {items.map((it, idx) => (
                   <button
                     key={it.to}
                     type="button"
                     onClick={() => navigate(it.to)}
-                    className={`pressable flex w-full items-center gap-3.5 px-4 py-3.5 text-left ${idx < items.length - 1 ? 'border-b border-border/60' : ''}`}
+                    className={`pressable flex w-full items-center gap-4 px-4 py-4 text-left ${idx < items.length - 1 ? 'border-b border-border/60' : ''}`}
                   >
                     <span
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl"
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl"
                       style={{ background: `${it.color}22`, color: it.color }}
                     >
-                      <it.icon size={21} />
+                      <it.icon size={23} />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-black">{it.label}</span>
-                      <span className="block truncate text-xs text-muted-foreground">{it.desc}</span>
+                      <span className="block text-base font-black">{it.label}</span>
+                      <span className="block truncate text-[13px] text-muted-foreground">{it.desc}</span>
                     </span>
                     <ChevronRight size={17} className="shrink-0 text-muted-foreground" />
                   </button>
@@ -101,7 +101,7 @@ export default function AdminPage() {
             </section>
           );
         })}
-        <p className="pb-4 text-center text-[11px] text-muted-foreground/60">WL Lunch 管理后台</p>
+        <p className="pb-4 text-center text-xs text-muted-foreground/60">WL Lunch 管理后台</p>
       </div>
     </div>
   );

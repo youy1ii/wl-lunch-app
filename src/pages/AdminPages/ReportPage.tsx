@@ -49,12 +49,12 @@ export default function ReportPage() {
       </AdminCard>
 
       {/* 报告正文（打印时保留） */}
-      <div id="report-print" className="card-solid space-y-5 rounded-2xl p-6 shadow-sm">
+      <div id="report-print" className="card-solid space-y-6 rounded-2xl p-7 shadow-sm">
         <div className="border-b-2 border-primary pb-4 text-center">
           <div className="mb-2 text-3xl">🍚</div>
-          <h2 className="text-xl font-black">WL Lunch 食堂口碑报告</h2>
-          <p className="mt-1 text-xs text-muted-foreground">上海市文来高中 · 学生食堂打分系统</p>
-          <p className="mt-1 text-xs text-muted-foreground">生成日期：{today}</p>
+          <h2 className="text-2xl font-black">WL Lunch 食堂口碑报告</h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">上海市文来高中 · 学生食堂打分系统</p>
+          <p className="mt-1 text-sm text-muted-foreground">生成日期：{today}</p>
         </div>
 
         {dish ? (() => {
@@ -67,7 +67,7 @@ export default function ReportPage() {
           return (
             <>
               <div>
-                <h3 className="mb-3 flex items-center gap-2 text-base font-black"><FileText size={18} className="text-primary" />「{dish.name}」单品分析</h3>
+                <h3 className="mb-3 flex items-center gap-2 text-lg font-black"><FileText size={18} className="text-primary" />「{dish.name}」单品分析</h3>
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <Stat label="综合均分" value={avg.toFixed(1)} sub="/ 5.0" />
                   <Stat label="打分人数" value={String(votes)} sub="人" />
@@ -83,7 +83,7 @@ export default function ReportPage() {
               </div>
               {quotes.length > 0 && (
                 <div>
-                  <h3 className="mb-3 flex items-center gap-2 text-base font-black"><MessageSquare size={18} className="text-primary" /> 精选学生评价</h3>
+                  <h3 className="mb-3 flex items-center gap-2 text-lg font-black"><MessageSquare size={18} className="text-primary" /> 精选学生评价</h3>
                   <div className="space-y-2">
                     {quotes.map((r) => (
                       <div key={r.id} className="rounded-xl bg-muted/60 px-4 py-3">
@@ -99,7 +99,7 @@ export default function ReportPage() {
         })() : (
           <>
             <div>
-              <h3 className="mb-3 flex items-center gap-2 text-base font-black"><TrendingUp size={18} className="text-primary" /> 数据概览</h3>
+              <h3 className="mb-3 flex items-center gap-2 text-lg font-black"><TrendingUp size={18} className="text-primary" /> 数据概览</h3>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Stat label="总评价数" value={String(totalReviews)} sub="条" />
                 <Stat label="总投票数" value={String(totalVotes)} sub="票" />
@@ -109,7 +109,7 @@ export default function ReportPage() {
             </div>
 
             <div>
-              <h3 className="mb-3 flex items-center gap-2 text-base font-black"><FileText size={18} className="text-primary" /> 一句话总结</h3>
+              <h3 className="mb-3 flex items-center gap-2 text-lg font-black"><FileText size={18} className="text-primary" /> 一句话总结</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 全校共收到 <b className="text-foreground">{totalReviews}</b> 条评价、<b className="text-foreground">{totalVotes}</b> 次打分，整体均分 <b className="text-foreground">{overallAvg.toFixed(1)}</b>。
                 最受欢迎的是「<b className="text-foreground">{top[0]?.name ?? '—'}</b>」（{top[0] ? avgOf(top[0]).toFixed(1) : '—'} 分），
@@ -120,7 +120,7 @@ export default function ReportPage() {
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
-                <h3 className="mb-3 flex items-center gap-2 text-base font-black"><Trophy size={18} className="text-amber-500" /> TOP3 最爱</h3>
+                <h3 className="mb-3 flex items-center gap-2 text-lg font-black"><Trophy size={18} className="text-amber-500" /> TOP3 最爱</h3>
                 <div className="space-y-2">
                   {top.map((d, i) => (
                     <div key={d.id} className="flex items-center gap-3 rounded-xl bg-amber-500/10 px-4 py-3">
@@ -133,7 +133,7 @@ export default function ReportPage() {
                 </div>
               </div>
               <div>
-                <h3 className="mb-3 flex items-center gap-2 text-base font-black"><ThumbsDown size={18} className="text-rose-500" /> TOP3 待改进</h3>
+                <h3 className="mb-3 flex items-center gap-2 text-lg font-black"><ThumbsDown size={18} className="text-rose-500" /> TOP3 待改进</h3>
                 <div className="space-y-2">
                   {bottom.map((d, i) => (
                     <div key={d.id} className="flex items-center gap-3 rounded-xl bg-rose-500/10 px-4 py-3">
@@ -148,7 +148,7 @@ export default function ReportPage() {
             </div>
 
             <div>
-              <h3 className="mb-3 flex items-center gap-2 text-base font-black"><MessageSquare size={18} className="text-primary" /> 反馈处理情况</h3>
+              <h3 className="mb-3 flex items-center gap-2 text-lg font-black"><MessageSquare size={18} className="text-primary" /> 反馈处理情况</h3>
               <div className="grid grid-cols-3 gap-3 text-center">
                 <Stat label="待处理" value={String(pending)} sub="条" />
                 <Stat label="已处理" value={String(replied)} sub="条" />

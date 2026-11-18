@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
-import { avgOf, tierOf, votesOf, WINDOWS, TIERS } from '@/lib/mock-data';
+import { avgOf, tierOf, tierLabel, votesOf, WINDOWS, TIERS } from '@/lib/mock-data';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { WindowId } from '@/lib/types';
@@ -37,9 +37,9 @@ export default function LeaderboardPage() {
   ];
 
   return (
-    <div className="flex h-full flex-col px-4 pt-4 bg-card">
+    <div className="flex h-full flex-col px-4 pt-5 bg-card">
       {/* 搜索 */}
-      <div className="relative mb-3">
+      <div className="relative mb-4">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
           value={query}
@@ -52,7 +52,7 @@ export default function LeaderboardPage() {
       {/* 浏览器窗口 */}
       <div className="flex-1 overflow-hidden rounded-t-2xl rounded-b-none bg-card shadow-sm ring-1 ring-black/5">
         {/* 窗口栏：红绿灯 + 标签 */}
-        <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-3 py-2">
+        <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-3.5 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
@@ -69,16 +69,16 @@ export default function LeaderboardPage() {
                     : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                {m === 'love' ? '最爱吃' : '最不爱吃'}
+                {m === 'love' ? t(settings.lang, 'loveMost') : t(settings.lang, 'hateLeast')}
               </button>
             ))}
           </div>
         </div>
 
         {/* 窗口内容 */}
-        <div className="h-full overflow-y-auto p-3 pb-28" style={{ height: 'calc(100% - 37px)' }} onScroll={(e) => setShowTop(e.currentTarget.scrollTop > 300)}>
+        <div className="h-full overflow-y-auto p-4 pb-28" style={{ height: 'calc(100% - 41px)' }} onScroll={(e) => setShowTop(e.currentTarget.scrollTop > 300)}>
           {/* 窗口分类筛选 */}
-          <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1">
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -96,7 +96,7 @@ export default function LeaderboardPage() {
             ))}
           </div>
 
-          <div key={mode} className="space-y-2">
+          <div key={mode} className="space-y-3">
             {pool.map((dish, i) => {
               const avg = avgOf(dish);
               const tier = tierOf(avg);
@@ -108,7 +108,7 @@ export default function LeaderboardPage() {
                     key={dish.id}
                     type="button"
                     onClick={() => navigate(`/dishes/${dish.id}`)}
-                    className="anim-pop pressable relative w-full overflow-hidden rounded-2xl p-3 text-left ring-1 transition-transform"
+                    className="anim-pop pressable relative w-full overflow-hidden rounded-2xl p-4 text-left ring-1 transition-transform"
                     style={{
                       animationDelay: `${i * 120}ms`,
                       background: medal.bg,
@@ -118,7 +118,7 @@ export default function LeaderboardPage() {
                     <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-20" style={{ background: medal.color }} />
                     <div className="relative flex items-center gap-3">
                       <span
-                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl font-black text-white shadow-md"
+                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-2xl font-black text-white shadow-md"
                         style={{ background: medal.color }}
                       >
                         {i + 1}
@@ -130,7 +130,7 @@ export default function LeaderboardPage() {
                             className="rounded-full px-2 py-0.5 font-bold text-white"
                             style={{ background: tier.color }}
                           >
-                            {tier.label}
+                            {tierLabel(tier.score, settings.lang)}
                           </span>
                           <span>{votesOf(dish)} 票</span>
                           {myRatings[dish.id] && (
@@ -158,7 +158,7 @@ export default function LeaderboardPage() {
                   key={dish.id}
                   type="button"
                   onClick={() => navigate(`/dishes/${dish.id}`)}
-                  className="anim-rise pressable flex w-full items-center gap-2 rounded-xl bg-card p-2.5 text-left ring-1 ring-black/5 transition-shadow hover:shadow-md"
+                  className="anim-rise pressable flex w-full items-center gap-2.5 rounded-xl bg-card p-3 text-left ring-1 ring-black/5 transition-shadow hover:shadow-md"
                   style={{ animationDelay: `${Math.min(i, 9) * 40}ms` }}
                 >
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-black text-muted-foreground">
@@ -176,7 +176,7 @@ export default function LeaderboardPage() {
                   <span className="text-sm font-black" style={{ color: tier.color }}>
                     {avg.toFixed(1)}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">{tier.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{tierLabel(tier.score, settings.lang)}</span>
                 </button>
               );
             })}

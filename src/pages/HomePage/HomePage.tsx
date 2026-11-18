@@ -11,9 +11,9 @@ import { t } from '@/lib/i18n';
 import AdminGroupChat from '@/components/AdminGroupChat';
 
 const PODIUM = [
-  { rank: 1, color: '#F5C518', barH: 'h-24' },
-  { rank: 2, color: '#C0C7D1', barH: 'h-16' },
-  { rank: 3, color: '#D08A4E', barH: 'h-14' },
+  { rank: 1, color: '#F5C518', barH: 'h-28' },
+  { rank: 2, color: '#C0C7D1', barH: 'h-20' },
+  { rank: 3, color: '#D08A4E', barH: 'h-16' },
 ];
 
 function PodiumBlock({
@@ -30,8 +30,8 @@ function PodiumBlock({
   lang: 'zh' | 'ja' | 'en';
 }) {
   return (
-    <div className="card-solid mt-4 rounded-2xl p-4 shadow-sm ring-1 ring-black/5">
-      <div className="mb-4 flex items-center gap-1.5 text-sm font-black">
+    <div className="card-solid mt-5 rounded-2xl p-5 shadow-sm ring-1 ring-black/5">
+      <div className="mb-5 flex items-center gap-1.5 text-base font-black">
         {good ? (
           <Trophy size={16} style={{ color: '#F5C518' }} />
         ) : (
@@ -39,7 +39,7 @@ function PodiumBlock({
         )}
         {title}
       </div>
-      <div className="flex items-end justify-center gap-2">
+      <div className="flex items-end justify-center gap-3">
         {[2, 1, 3].map((r) => {
           const d = list[r - 1];
           if (!d) return <div key={r} className="w-24" />;
@@ -51,24 +51,24 @@ function PodiumBlock({
               key={r}
               type="button"
               onClick={() => onOpen(d.id)}
-              className="anim-pop pressable flex w-20 flex-col items-center"
+              className="anim-pop pressable flex w-24 flex-col items-center"
               style={{ animationDelay: `${r * 100}ms` }}
             >
               <div
-                className="flex h-14 w-14 items-center justify-center rounded-full text-xl font-black text-white"
+                className="flex h-16 w-16 items-center justify-center rounded-full text-2xl font-black text-white"
                 style={{ background: color }}
               >
                 {r}
               </div>
-              <div className="mt-1.5 max-w-full truncate text-xs font-bold">{d.name}</div>
-              <div className="mt-0.5 flex items-baseline gap-1">
-                <span className="text-base font-black" style={{ color }}>
+              <div className="mt-2 max-w-full truncate text-sm font-bold">{d.name}</div>
+              <div className="mt-1 flex items-baseline gap-1.5">
+                <span className="text-lg font-black" style={{ color }}>
                   {avgOf(d).toFixed(1)}
                 </span>
-                <span className="text-[9px] text-muted-foreground">{votesOf(d)}票</span>
+                <span className="text-[11px] text-muted-foreground">{votesOf(d)}票</span>
               </div>
               <div
-                className={cn('mt-1.5 flex w-full items-start justify-center rounded-t-lg pt-1 text-[10px] font-bold text-white/90 ring-1 ring-black/5', meta.barH)}
+                className={cn('mt-2 flex w-full items-start justify-center rounded-t-lg pt-1.5 text-xs font-bold text-white/90 ring-1 ring-black/5', meta.barH)}
                 style={{ background: `linear-gradient(180deg, ${color}, ${color}99)` }}
               >
                 {tierLabel(tier.score, lang)}
@@ -134,10 +134,10 @@ export default function HomePage() {
   const unread = notifications.filter((n) => !n.read).length;
 
   return (
-    <div className="flex h-full flex-col p-4">
+    <div className="flex h-full flex-col p-5">
       {/* 顶栏：标题 + 通知铃 */}
-      <div className="mb-3 flex items-center justify-between">
-        <h1 className="text-xl font-black tracking-tight">
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-2xl font-black tracking-tight">
           WL <span style={{ color: 'var(--primary)' }}>Lunch</span>
         </h1>
         <div className="flex items-center gap-2">
@@ -145,7 +145,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setShowGroup(true)}
-              className="pressable relative flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 ring-black/5"
+              className="pressable relative flex h-11 w-11 items-center justify-center rounded-full shadow-sm ring-1 ring-black/5"
               style={{ background: 'var(--card)', color: 'var(--primary)' }}
             >
               <Users size={18} />
@@ -160,7 +160,7 @@ export default function HomePage() {
               setShowNotif((v) => !v);
               markAllNotificationsRead();
             }}
-            className="pressable relative flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 ring-black/5" style={{ background: 'var(--card)' }}
+            className="pressable relative flex h-11 w-11 items-center justify-center rounded-full shadow-sm ring-1 ring-black/5" style={{ background: 'var(--card)' }}
           >
             <Bell size={18} />
             {unread > 0 && (
@@ -248,7 +248,7 @@ export default function HomePage() {
               key={b.id}
               type="button"
               onClick={() => go(b.target)}
-              className="relative h-44 w-full shrink-0 overflow-hidden p-5 text-left"
+              className="relative h-48 w-full shrink-0 overflow-hidden p-5 text-left"
               style={
                 b.image
                   ? { background: `url(${b.image}) center/cover no-repeat` }
@@ -275,10 +275,10 @@ export default function HomePage() {
       </div>
 
       {/* 常驻滚动通知 */}
-      <div className="card-solid mt-3 flex items-center gap-2 overflow-hidden rounded-full px-3 py-2 ring-1 ring-black/5">
-        <Megaphone size={14} className="shrink-0 text-primary" />
+      <div className="card-solid mt-4 flex items-center gap-2.5 overflow-hidden rounded-full px-4 py-2.5 ring-1 ring-black/5">
+        <Megaphone size={16} className="shrink-0 text-primary" />
         <div className="relative flex-1 overflow-hidden">
-          <div className="marquee-track flex whitespace-nowrap text-xs">
+          <div className="marquee-track flex whitespace-nowrap text-sm">
             <span className="pr-8">{ticker}</span>
             <span className="pr-8">{ticker}</span>
           </div>

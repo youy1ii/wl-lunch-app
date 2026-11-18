@@ -37,7 +37,7 @@ function Avatar({ name, admin }: { name: string; admin?: boolean }) {
   return (
     <div
       className={cn(
-        'flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-black',
+        'flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full text-base font-black',
         admin ? OWNER_AVATAR_CLS : 'bg-amber-400/90 text-white ring-2 ring-amber-300',
       )}
     >
@@ -128,7 +128,7 @@ export default function FeedbackInboxPage() {
           <Avatar name={active.name} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-black">{active.name}</div>
-            <div className="truncate text-[10px] text-muted-foreground">
+            <div className="truncate text-xs text-muted-foreground">
               {active.anonymous ? t(lang, 'anonymous') : (active.uid ? `UID:${active.uid}` : '')}
               {active.realName ? ` · ${active.realName}` : ''}
             </div>
@@ -144,15 +144,15 @@ export default function FeedbackInboxPage() {
                 <div className="flex items-start gap-2">
                   <Avatar name={active.name} />
                   <div className="max-w-[75%]">
-                    <div className="mb-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <div className="mb-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                       <span className="font-bold">{active.name}</span>
                       <span>{fmtTime(f.createdAt)}</span>
-                      <span className={cn('rounded px-1 py-0.5 text-[8px] font-bold',
+                      <span className={cn('rounded px-1 py-0.5 text-[10px] font-bold',
                         f.kind === 'complain' ? 'bg-red-500/20 text-red-600' : 'bg-blue-500/20 text-blue-600')}>
                         {f.kind === 'complain' ? t(lang, 'complain') : t(lang, 'suggest')}
                       </span>
                       {f.status === 'pending' && (
-                        <span className="rounded bg-destructive/20 px-1 py-0.5 text-[8px] font-bold text-destructive">
+                        <span className="rounded bg-destructive/20 px-1 py-0.5 text-[10px] font-bold text-destructive">
                           {t(lang, 'pending')}
                         </span>
                       )}
@@ -173,10 +173,10 @@ export default function FeedbackInboxPage() {
                 {f.status === 'replied' && f.reply && (
                   <div className="flex items-start justify-end gap-2">
                     <div className="max-w-[75%]">
-                      <div className="mb-0.5 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
+                      <div className="mb-0.5 flex items-center justify-end gap-1.5 text-xs text-muted-foreground">
                         {f.repliedAt && <span>{fmtTime(f.repliedAt)}</span>}
                         <span className="font-bold" style={{ color: isOwnerMark(f.adminRep) ? 'var(--primary)' : undefined }}>{user?.nickname || f.adminRep || '管理员'}</span>
-                        {isOwnerMark(f.adminRep) && <span className="rounded bg-emerald-500 px-1 py-0.5 text-[8px] font-black text-white">总管理员</span>}
+                        {isOwnerMark(f.adminRep) && <span className="rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-black text-white">总管理员</span>}
                       </div>
                       <div className="rounded-2xl rounded-tr-sm bg-primary px-3 py-2 text-left text-sm text-primary-foreground shadow-sm">
                         {f.reply}
@@ -192,7 +192,7 @@ export default function FeedbackInboxPage() {
 
         {pendingItems.length > 0 ? (
           <div className="border-t border-border bg-card px-3 py-2.5">
-            <div className="mb-1.5 truncate text-[10px] text-muted-foreground">
+            <div className="mb-1.5 truncate text-xs text-muted-foreground">
               {t(lang, 'reply')} → {active.items.find((x) => x.id === currentTarget)?.text.slice(0, 24) || ''}
             </div>
             <div className="flex items-center gap-2">
@@ -201,7 +201,7 @@ export default function FeedbackInboxPage() {
                 onChange={(e) => setReplyText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') doReply(); }}
                 placeholder={t(lang, 'replyPlaceholder')}
-                className="flex-1 rounded-full bg-muted px-3 py-2 text-sm outline-none"
+                className="flex-1 rounded-full bg-muted px-4 py-2.5 text-[15px] outline-none"
               />
               <button
                 type="button"
@@ -235,7 +235,7 @@ export default function FeedbackInboxPage() {
       <div className="mx-3 mt-3 flex gap-2">
         {(['all', 'pending', 'replied'] as const).map((name) => (
           <button key={name} type="button" onClick={() => setTab(name)}
-            className={cn('flex-1 rounded-xl py-1.5 text-xs font-bold', tab === name ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
+            className={cn('flex-1 rounded-xl py-2 text-sm font-bold', tab === name ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
             {t(lang, name)}
           </button>
         ))}
@@ -253,7 +253,7 @@ export default function FeedbackInboxPage() {
             key={c.key}
             type="button"
             onClick={() => { setActiveKey(c.key); setReplyTarget(null); setReplyText(''); }}
-            className="pressable flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left"
+            className="pressable flex w-full items-center gap-3.5 border-b border-border/60 px-4 py-4 text-left"
           >
             <div className="relative">
               <Avatar name={c.name} />
@@ -265,12 +265,12 @@ export default function FeedbackInboxPage() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-sm font-black">{c.name}</span>
-                <span className="shrink-0 text-[10px] text-muted-foreground">{fmtTime(c.lastAt)}</span>
+                <span className="truncate text-base font-black">{c.name}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{fmtTime(c.lastAt)}</span>
               </div>
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-xs text-muted-foreground">{c.lastText}</span>
-                <MessageCircle size={13} className="shrink-0 text-muted-foreground" />
+                <span className="truncate text-sm text-muted-foreground">{c.lastText}</span>
+                <MessageCircle size={15} className="shrink-0 text-muted-foreground" />
               </div>
             </div>
           </button>

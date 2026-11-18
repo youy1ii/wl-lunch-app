@@ -7,6 +7,14 @@ import { t } from '@/lib/i18n';
 import LoginPage from '@/pages/LoginPage/LoginPage';
 import AnnouncePopup from '@/components/AnnouncePopup';
 import { cn } from '@/lib/utils';
+import type { Lang } from '@/lib/types';
+
+// 每种界面语言一套字体栈：切换语言时整套 UI 字形跟着变（用户自定义字体优先）
+const LANG_FONT_STACK: Record<Lang, string> = {
+  zh: "'Noto Sans SC', 'LarkHackSafariFont', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif",
+  ja: "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, 'Noto Sans JP', sans-serif",
+  en: "Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+};
 
 export default function AppShell() {
   const { user, settings, unreadAnnouncement, notifications } = useApp();
@@ -15,7 +23,25 @@ export default function AppShell() {
   const [settling, setSettling] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
+  const mainRef = useRef<HTMLElement>(null);
+  // 任何路由切换都回到顶部：真正的滚动容器是 main，而不是 window。
+  // 用 rAF 再补一次，确保新页面挂载、布局稳定后仍停在顶部。
+  useEffect(() => {
+    const reset = () => {
+      window.scrollTo(0, 0);
+      const main = mainRef.current;
+      if (!main) return;
+      main.scrollTop = 0;
+      // 同时重置页面内部所有可滚动容器（很多页面是自己的 overflow-y-auto 在滚）
+      main.querySelectorAll<HTMLElement>('*').forEach((el) => {
+        const style = window.getComputedStyle(el);
+        if (/(auto|scroll)/.test(style.overflowY) && el.scrollTop !== 0) el.scrollTop = 0;
+      });
+    };
+    reset();
+    const raf = requestAnimationFrame(reset);
+    return () => cancelAnimationFrame(raf);
+  }, [location.pathname]);
   type PopNotif = { text: string; kind: string };
   const [toast, setToast] = useState<PopNotif | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -27,6 +53,18 @@ export default function AppShell() {
     document.documentElement.classList.remove('theme-light', 'theme-dark');
     if (theme !== 'system') document.documentElement.classList.add(`theme-${theme}`);
   }, [settings.theme]);
+
+  // 语言切换 → 全套 UI 字体跟随（含 portal 弹层，因为它们挂在 body 上继承 --font-sans）
+  useEffect(() => {
+    const lang: Lang = settings.lang ?? 'zh';
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang === 'ja' ? 'ja-JP' : 'en';
+    const stack = settings.font
+      ? `'${settings.font}', ${LANG_FONT_STACK[lang]}`
+      : LANG_FONT_STACK[lang];
+    document.documentElement.style.setProperty('--font-sans', stack);
+    document.documentElement.style.fontFamily = stack;
+    document.body.style.fontFamily = stack;
+  }, [settings.lang, settings.font]);
 
   useEffect(() => {
     if (notifications.length > prevNotifCount.current) {
@@ -132,7 +170,7 @@ export default function AppShell() {
   return (
     <div
       className={cn(
-        'dots-bg relative mx-auto flex h-full max-w-md flex-col overflow-hidden',
+        'dots-bg app-frame relative mx-auto flex h-full w-full max-w-md flex-col overflow-hidden',
         settings.frosted && 'frosted-on',
 
         (settings.theme ?? 'dark') === 'dark' && 'theme-dark',
@@ -141,7 +179,9 @@ export default function AppShell() {
       style={{
         background: settings.bgColor || undefined,
         color: settings.textColor || undefined,
-        fontFamily: settings.font ? `'${settings.font}', sans-serif` : undefined,
+        fontFamily: settings.font
+          ? `'${settings.font}', ${LANG_FONT_STACK[settings.lang ?? 'zh']}`
+          : LANG_FONT_STACK[settings.lang ?? 'zh'],
         ['--primary' as string]: settings.accent || undefined,
         ['--ring' as string]: settings.accent || undefined,
         ['--card-alpha' as string]: `${Math.round(settings.opacity * 100)}%`,
@@ -150,7 +190,7 @@ export default function AppShell() {
     >
       {settings.bgImage && (
         <div
-          className="pointer-events-none fixed inset-0 -z-10"
+          className="pointer-events-none absolute inset-0 -z-10"
           style={{
             background: `url(${settings.bgImage}) center/cover no-repeat`,
             transform: `translate(${parallax.x}px, ${parallax.y}px) scale(1.15)`,
@@ -163,7 +203,7 @@ export default function AppShell() {
       {/* 跟随鼠标的金色光晕（无背景图时也有） */}
       {!settings.bgImage && (
         <div
-          className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+          className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
         >
           <div
             className="absolute -top-20 -right-20 h-64 w-64 rounded-full opacity-30 blur-3xl"
@@ -216,22 +256,22 @@ export default function AppShell() {
         );
       })()}
 
-      <main className="relative flex-1 overflow-y-auto pb-48">
+      <main ref={mainRef} className="relative flex-1 overflow-y-auto pb-40">
         <div key={location.pathname} className="anim-page">
           <Outlet />
         </div>
       </main>
 
-      {/* 顶部高斯模糊渐变 */}
-      <div className="pointer-events-none fixed top-0 left-0 right-0 z-[250] h-10 backdrop-blur-[2px]" style={{ maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)' }} />
-      {/* 底部高斯模糊渐变 */}
-      <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-[250] h-10 backdrop-blur-[2px]" style={{ maskImage: 'linear-gradient(to top, black, transparent)', WebkitMaskImage: 'linear-gradient(to top, black, transparent)' }} />
+      {/* 顶部高斯模糊渐变（限制在手机卡片内） */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-[250] h-10 backdrop-blur-[2px]" style={{ maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)' }} />
+      {/* 底部高斯模糊渐变（限制在手机卡片内） */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[250] h-10 backdrop-blur-[2px]" style={{ maskImage: 'linear-gradient(to top, black, transparent)', WebkitMaskImage: 'linear-gradient(to top, black, transparent)' }} />
 
       {/* 液态玻璃浮窗底栏：扁长药丸 */}
       <nav
         style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
         className={cn(
-          'absolute left-1/2 z-[300] flex w-[92%] max-w-sm -translate-x-1/2 items-center justify-between gap-0.5 rounded-full p-1',
+          'absolute left-1/2 z-[300] flex w-[92%] max-w-[420px] -translate-x-1/2 items-center justify-between gap-1 rounded-full p-1.5',
           'shadow-lg ring-1 ring-black/10 backdrop-blur-xl',
           settings.frosted ? 'card-glass' : 'card-solid',
         )}
@@ -250,7 +290,7 @@ export default function AppShell() {
             }}
             className={({ isActive }) =>
               cn(
-                'relative flex flex-1 flex-col items-center gap-0 rounded-full px-2 py-1 text-[10px] font-medium transition-all duration-300',
+                'relative flex flex-1 flex-col items-center gap-0.5 rounded-full px-2 py-1.5 text-xs font-medium transition-all duration-300',
                 isActive ? 'text-primary' : 'text-muted-foreground',
               )
             }
@@ -264,9 +304,9 @@ export default function AppShell() {
                   )}
                 />
                 <span className="relative flex items-center gap-0.5">
-                  <item.icon size={18} strokeWidth={isActive ? 2.4 : 2} />
+                  <item.icon size={20} strokeWidth={isActive ? 2.4 : 2} />
                 </span>
-                <span className={cn('relative text-[9px] leading-tight', isActive && 'font-bold')}>
+                <span className={cn('relative text-[11px] leading-tight', isActive && 'font-bold')}>
                   {t(settings.lang, item.key)}
                 </span>
               </>

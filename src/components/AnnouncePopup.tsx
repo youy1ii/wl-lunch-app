@@ -55,8 +55,8 @@ export default function AnnouncePopup({ announcement }: { announcement: IAnnounc
     : 'bg-amber-500/15 text-amber-600 dark:text-amber-400';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="card-solid w-full max-w-md rounded-2xl p-5" style={{ maxHeight: '85vh' }}>
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="card-solid w-full max-w-md rounded-2xl p-6 shadow-2xl" style={{ maxHeight: '85%' }}>
         <div className="mb-3 flex items-center gap-2.5">
           <div className={'flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-base font-black ring-2 ' + avatarBg}>
             {adminAvatar}
@@ -70,10 +70,10 @@ export default function AnnouncePopup({ announcement }: { announcement: IAnnounc
           </div>
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">群公告</span>
         </div>
-        <h2 className="mb-3 text-center text-base font-black">{announcement.title}</h2>
+        <h2 className="mb-4 text-center text-lg font-black">{announcement.title}</h2>
         <div
           ref={scrollRef}
-          className="dots-bg-fine max-h-[50vh] overflow-y-auto rounded-xl bg-muted p-4 text-sm leading-relaxed"
+          className="dots-bg-fine max-h-[46%] overflow-y-auto rounded-xl bg-muted p-4 text-[15px] leading-relaxed"
         >
           {announcement.imageUrl && (
             <img

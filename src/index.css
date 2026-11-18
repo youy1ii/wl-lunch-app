@@ -63,6 +63,35 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  line-height: 1.6;
+}
+
+/* ===== 桌面适配：把移动端 App 居中呈现为「手机卡片」，两侧改为氛围背景 ===== */
+@media (min-width: 768px) {
+  html, body, #root {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  body {
+    background: radial-gradient(circle at 50% -10%, #4a4436 0%, #2a2620 42%, #15130f 100%) !important;
+  }
+  html.theme-light body {
+    background: radial-gradient(circle at 50% -10%, #fffaf0 0%, #f6ead0 48%, #e6d5ac 100%) !important;
+  }
+  .app-frame {
+    width: 100% !important;
+    max-width: 468px !important;
+    height: min(940px, calc(100dvh - 40px)) !important;
+    max-height: calc(100dvh - 40px) !important;
+    border-radius: 2.25rem !important;
+    box-shadow:
+      0 40px 120px -24px rgba(0, 0, 0, 0.75),
+      0 0 0 1px rgba(255, 255, 255, 0.07),
+      0 0 0 9px rgba(255, 255, 255, 0.035) !important;
+    overflow: hidden !important;
+  }
+  .wx-notif { top: 24px !important; }
 }
 
 /* 金色泛光（收敛，不晃眼） */

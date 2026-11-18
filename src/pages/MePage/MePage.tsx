@@ -24,6 +24,16 @@ import { t } from '@/lib/i18n';
 import { TIERS } from '@/lib/mock-data';
 import type { Lang } from '@/lib/types';
 
+// 隐私开关项：草稿态与保存共用同一份定义
+const PRIVACY_ITEMS = [
+  { key: 'showRealInfo', label: { zh: '展示真实姓名', ja: '本名を表示', en: 'Show real name' }, def: false },
+  { key: 'showClass', label: { zh: '展示班级', ja: 'クラスを表示', en: 'Show class' }, def: false },
+  { key: 'showStudentId', label: { zh: '展示学号', ja: '学籍番号を表示', en: 'Show student ID' }, def: false },
+  { key: 'showGrade', label: { zh: '展示年级', ja: '学年を表示', en: 'Show grade' }, def: false },
+  { key: 'showFollowers', label: { zh: '别人可见我的粉丝列表', ja: 'フォワラー一覧を公開', en: 'Show my followers' }, def: true },
+  { key: 'showFollowing', label: { zh: '别人可见我的关注列表', ja: 'フォロー一覧を公開', en: 'Show my following' }, def: true },
+] as const;
+
 export default function MePage() {
   const { user, isAdmin, settings, setSettings, logout, dishes, followees, updateUserProfile, frames, myFrameId, setActiveFrame, profileHeader, setHeaderImage, feedbacks, replyFeedback, savedAccounts, switchAccount, redeemFrameCode } = useApp();
   const navigate = useNavigate();
@@ -34,6 +44,10 @@ export default function MePage() {
   const [showFollowing, setShowFollowing] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  // 弹层草稿：点确认才写入，避免 onBlur/勾选即生效
+  const [nickDraft, setNickDraft] = useState('');
+  const [bioDraft2, setBioDraft2] = useState('');
+  const [privacyDraft, setPrivacyDraft] = useState<Record<string, boolean>>({});
   const [notifOn, setNotifOn] = useState(true);
   const [showFrames, setShowFrames] = useState(false);
   const [cropImg, setCropImg] = useState<string>('');
@@ -236,7 +250,7 @@ export default function MePage() {
       <div className="card-solid mt-5 overflow-hidden rounded-2xl shadow-sm">
         <button
           type="button"
-          onClick={() => setShowEdit(true)}
+          onClick={() => { setNickDraft(user?.nickname ?? ''); setBioDraft2(user?.bio ?? ''); setShowEdit(true); }}
           className="pressable flex w-full items-center gap-3 border-b border-border px-4 py-3.5 text-left"
         >
           <UserRound size={18} className="text-muted-foreground" />
@@ -245,7 +259,12 @@ export default function MePage() {
         </button>
         <button
           type="button"
-          onClick={() => setShowPrivacy(true)}
+          onClick={() => {
+            const d: Record<string, boolean> = {};
+            PRIVACY_ITEMS.forEach((it) => { d[it.key] = (user as any)?.[it.key] ?? it.def; });
+            setPrivacyDraft(d);
+            setShowPrivacy(true);
+          }}
           className="pressable flex w-full items-center gap-3 border-b border-border px-4 py-3.5 text-left"
         >
           <ShieldCheck size={18} className="text-muted-foreground" />
@@ -303,28 +322,39 @@ export default function MePage() {
               <h3 className="text-sm font-black">{t(settings.lang, 'editProfile')}</h3>
               <button type="button" onClick={() => setShowEdit(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
             </div>
-            <label className="mb-1 block text-xs font-bold text-muted-foreground">昵称（别人看到的名字）</label>
+            <label className="mb-1 block text-xs font-bold text-muted-foreground">{t(settings.lang, 'nickname')}</label>
             <input
-              defaultValue={user?.nickname ?? ''}
-              onBlur={(e) => { updateUserProfile({ nickname: e.target.value }); showToast('昵称已保存'); }}
-              placeholder="给自己起个昵称"
+              value={nickDraft}
+              onChange={(e) => setNickDraft(e.target.value)}
+              placeholder={t(settings.lang, 'nickname')}
               className="mb-3 w-full rounded-xl bg-muted px-3 py-2 text-sm outline-none"
             />
-            <label className="mb-1 block text-xs font-bold text-muted-foreground">个性签名</label>
+            <label className="mb-1 block text-xs font-bold text-muted-foreground">{t(settings.lang, 'bioEdit')}</label>
             <input
-              defaultValue={user?.bio ?? ''}
-              onBlur={(e) => updateUserProfile({ bio: e.target.value })}
-              placeholder="写点什么..."
+              value={bioDraft2}
+              onChange={(e) => setBioDraft2(e.target.value)}
+              placeholder={t(settings.lang, 'editBio')}
               className="mb-3 w-full rounded-xl bg-muted px-3 py-2 text-sm outline-none"
             />
             <button
               type="button"
               onClick={() => { setShowEdit(false); setShowFrames(true); }}
-              className="mt-3 w-full rounded-xl bg-primary/10 py-2.5 text-sm font-bold text-primary pressable"
+              className="mt-1 w-full rounded-xl bg-primary/10 py-2.5 text-sm font-bold text-primary pressable"
             >
-              ✨ 头像框装扮
+              ✨ {t(settings.lang, 'avatarFrame')}
             </button>
-            <p className="mt-2 text-[10px] text-muted-foreground">点头像可以上传图片</p>
+            <p className="mt-2 text-[10px] text-muted-foreground">{t(settings.lang, 'uploadAvatar')}</p>
+            <button
+              type="button"
+              onClick={() => {
+                updateUserProfile({ nickname: nickDraft, bio: bioDraft2 });
+                setShowEdit(false);
+                showToast(t(settings.lang, 'saved'));
+              }}
+              className="mt-4 w-full rounded-xl bg-primary py-3 text-sm font-black text-primary-foreground pressable"
+            >
+              {t(settings.lang, 'confirm')}
+            </button>
           </div>
         </div>,
         document.body,
@@ -342,24 +372,28 @@ export default function MePage() {
               <h3 className="text-sm font-black">{t(settings.lang, 'privacySettings')}</h3>
               <button type="button" onClick={() => setShowPrivacy(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
             </div>
-            {[
-              { key: 'showRealInfo', label: '展示真实姓名', def: false },
-              { key: 'showClass', label: '展示班级', def: false },
-              { key: 'showStudentId', label: '展示学号', def: false },
-              { key: 'showGrade', label: '展示年级', def: false },
-              { key: 'showFollowers', label: '别人可见我的粉丝列表', def: true },
-              { key: 'showFollowing', label: '别人可见我的关注列表', def: true },
-            ].map((item) => (
+            {PRIVACY_ITEMS.map((item) => (
               <label key={item.key} className="mb-2 flex items-center justify-between text-sm">
-                {item.label}
+                {item.label[settings.lang]}
                 <input
                   type="checkbox"
-                  checked={(user?.[item.key] as boolean) ?? item.def}
-                  onChange={(e) => updateUserProfile({ [item.key]: e.target.checked } as any)}
+                  checked={privacyDraft[item.key] ?? item.def}
+                  onChange={(e) => setPrivacyDraft({ ...privacyDraft, [item.key]: e.target.checked })}
                 />
               </label>
             ))}
-            <p className="mt-2 text-[10px] text-muted-foreground">真实信息默认隐藏，粉丝/关注列表默认公开</p>
+            <p className="mt-2 text-[10px] text-muted-foreground">{settings.lang === 'zh' ? '真实信息默认隐藏，粉丝/关注列表默认公开' : settings.lang === 'ja' ? '実情報は非公開、フォロー一覧は公開が初期設定です' : 'Real info hidden by default; followers/following public by default'}</p>
+            <button
+              type="button"
+              onClick={() => {
+                updateUserProfile(privacyDraft as any);
+                setShowPrivacy(false);
+                showToast(t(settings.lang, 'saved'));
+              }}
+              className="mt-4 w-full rounded-xl bg-primary py-3 text-sm font-black text-primary-foreground pressable"
+            >
+              {t(settings.lang, 'confirm')}
+            </button>
           </div>
         </div>,
         document.body,
