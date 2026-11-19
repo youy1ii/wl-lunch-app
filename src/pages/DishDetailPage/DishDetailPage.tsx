@@ -421,8 +421,9 @@ export default function DishDetailPage() {
       )}
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="mx-auto w-full max-w-md rounded-t-2xl">
-          <div className="p-4">
+        <SheetContent side="bottom" className="mx-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-t-2xl p-0">
+          {/* 可滚动区：小屏上也能完整滑到内容，发送按钮固定在底部不被遮挡 */}
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2 pt-4">
             <div className="mb-3 text-center text-sm font-black">{t(settings.lang, 'ratingTitle')} · {dish.name}</div>
             <RatingSlider value={selectedTier} onChange={setSelectedTier} haptics={settings.haptics} dishName={dish.name} />
             <textarea
@@ -431,12 +432,14 @@ export default function DishDetailPage() {
               placeholder="真的不说两句吗？？？"
               className="mt-4 h-20 w-full rounded-xl bg-muted p-3 text-sm outline-none"
             />
+          </div>
+          <div className="shrink-0 border-t border-border/60 bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <button
               type="button"
               onClick={submit}
               disabled={selectedTier < 1}
               className={cn(
-                'mt-3 w-full rounded-xl py-3 text-sm font-bold pressable',
+                'w-full rounded-xl py-3 text-sm font-bold pressable',
                 selectedTier < 1 ? 'bg-muted-foreground opacity-40' : 'bg-primary text-primary-foreground',
               )}
             >

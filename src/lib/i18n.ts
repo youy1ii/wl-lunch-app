@@ -251,7 +251,7 @@ const zh: Dict = {
   loveMost: '最爱吃',
   hateLeast: '最不爱吃',
   votes: '票',
-  myRating: '我评',
+  myRating: '写评论！',
   // Appearance
   resetDefaults: '还原默认设置',
   resetDone: '已还原默认设置',
@@ -534,7 +534,7 @@ const ja: Dict = {
   loveMost: '好き',
   hateLeast: '苦手',
   votes: '票',
-  myRating: '自分',
+  myRating: 'コメントを書く！',
   // Appearance
   resetDefaults: 'デフォルトに戻す',
   resetDone: 'デフォルトに戻しました',
@@ -817,7 +817,7 @@ const en: Dict = {
   loveMost: 'Loved',
   hateLeast: 'Hated',
   votes: 'votes',
-  myRating: 'Me',
+  myRating: 'Write Comment!',
   // Appearance
   resetDefaults: 'Reset to defaults',
   resetDone: 'Reset to defaults',

@@ -10,6 +10,9 @@ import tailwindcss from '@tailwindcss/vite';
 //   MIAODA_RESOURCE_CDN_PREFIX  JS/CSS 静态资源 CDN 前缀
 const basePath = process.env.MIAODA_CLIENT_BASE_PATH || '/';
 const cdnPrefix = process.env.MIAODA_RESOURCE_CDN_PREFIX;
+// Vite 的 base 必须以斜杠结尾，否则 import.meta.env.BASE_URL 拼接资源名会缺斜杠
+// （如 /wl-lunch-app + logo.png → /wl-lunch-applogo.png，导致开屏 logo 裂图）
+const normalizedBase = basePath !== '/' && !basePath.endsWith('/') ? `${basePath}/` : basePath;
 
 // 产物分层：vite 原生产物（dist/client，中间产物，整理后删除）→ 妙搭托管产物结构：
 //   dist/output/           index.html + public 同源资源 + routes.json（走应用权限校验）
@@ -102,7 +105,7 @@ function collectRoutePaths(srcDir: string): string[] {
 export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss(), sparkJsonPlugin()],
   // 生产构建：JS/CSS 引用带 CDN 前缀（无 CDN 时退回 base path）；dev 恒为 /
-  base: command === 'build' ? cdnPrefix || basePath : '/',
+  base: command === 'build' ? cdnPrefix || normalizedBase : '/',
   define: {
     // 路由 basename 与资源前缀解耦，单独注入
     'import.meta.env.MIAODA_CLIENT_BASE_PATH': JSON.stringify(basePath),

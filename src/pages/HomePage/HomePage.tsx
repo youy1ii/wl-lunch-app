@@ -86,6 +86,7 @@ export default function HomePage() {
   const [idx, setIdx] = useState(0);
   const [dragDx, setDragDx] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [failedBanners, setFailedBanners] = useState<Set<number>>(new Set());
   const [showNotif, setShowNotif] = useState(false);
   const [emailDetail, setEmailDetail] = useState<INotification | null>(null);
   const [showGroup, setShowGroup] = useState(false);
@@ -243,23 +244,34 @@ export default function HomePage() {
             transition: dragging ? 'none' : 'transform 0.5s cubic-bezier(0.22,1,0.36,1)',
           }}
         >
-          {banners.map((b) => (
-            <button
-              key={b.id}
-              type="button"
-              onClick={() => go(b.target)}
-              className="relative h-48 w-full shrink-0 overflow-hidden p-5 text-left"
-              style={
-                b.image
-                  ? { background: `url(${b.image}) center/cover no-repeat` }
-                  : { background: 'linear-gradient(135deg, #E8B923, #D97706 60%, #F5E3B3)' }
-              }
-            >
-              {!b.image && <div className="dots-bg-fine absolute inset-0 opacity-30" />}
-              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent" />
-              {!b.image && <div className="relative text-xl font-black text-white drop-shadow-lg">{b.title}</div>}
-            </button>
-          ))}
+          {banners.map((b) => {
+            const showImage = !!b.image && !failedBanners.has(b.id);
+            return (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => go(b.target)}
+                className="relative h-48 w-full shrink-0 overflow-hidden p-5 text-left"
+                style={{
+                  background: showImage
+                    ? `url(${b.image}) center/cover no-repeat`
+                    : 'linear-gradient(135deg, #E8B923, #D97706 60%, #F5E3B3)',
+                }}
+              >
+                {showImage && (
+                  <img
+                    src={b.image!}
+                    alt={b.title}
+                    className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+                    onError={() => setFailedBanners((prev) => new Set(prev).add(b.id))}
+                  />
+                )}
+                {!showImage && <div className="dots-bg-fine absolute inset-0 opacity-30" />}
+                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent" />
+                {!showImage && <div className="relative text-xl font-black text-white drop-shadow-lg">{b.title}</div>}
+              </button>
+            );
+          })}
         </div>
         <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
           {banners.map((b, i) => (

@@ -68,6 +68,15 @@ type BusRow = {
   pinned: boolean | null;
 };
 
+// 把数据库里存的本站完整外链转成同源相对路径，避免子路径部署下外链加载超时导致 banner 空白。
+function normalizeBannerImage(raw: any): string | undefined {
+  if (!raw) return undefined;
+  const url = String(raw);
+  const m = url.match(/\/wl-lunch-app\/([^/?#]+\.(?:png|jpe?g|webp|gif))(?:\?|#|$)/i);
+  if (m) return `${import.meta.env.BASE_URL}${m[1]}`;
+  return url;
+}
+
 const jparse = (s?: string | null): any => {
   try { return s ? JSON.parse(s) : {}; } catch { return {}; }
 };
@@ -373,7 +382,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     if (!bannerRes.error) {
       setBannersState((bannerRes.data || []).map((r: any) => ({
         id: Number(r.id), title: r.title || '', target: r.link_url || '',
-        image: r.image_url || undefined,
+        image: normalizeBannerImage(r.image_url),
       } as IBanner)));
     }
 

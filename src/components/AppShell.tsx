@@ -42,6 +42,16 @@ export default function AppShell() {
     const raf = requestAnimationFrame(reset);
     return () => cancelAnimationFrame(raf);
   }, [location.pathname]);
+
+  // 登录成功后强制回到主页：只在「未登录 → 已登录」这一刻跳转。
+  // 初始值取当前登录态，这样刷新页面（会话恢复）不会误跳，只有真正登录/切换账号才回主页。
+  const wasLoggedIn = useRef(!!user);
+  useEffect(() => {
+    const loggedIn = !!user;
+    if (loggedIn && !wasLoggedIn.current) navigate('/', { replace: true });
+    wasLoggedIn.current = loggedIn;
+  }, [user, navigate]);
+
   type PopNotif = { text: string; kind: string };
   const [toast, setToast] = useState<PopNotif | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);

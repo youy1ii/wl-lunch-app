@@ -69,7 +69,7 @@ export default function LoginPage() {
   return (
     <div className="dots-bg flex h-full flex-col items-center justify-center bg-background p-6">
       <div className="anim-rise mb-8 text-center" style={{ animationDelay: '100ms' }}>
-        <img src="/logo.png" alt="Lunch Company" className="mx-auto w-48 rounded-2xl shadow-xl" />
+        <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Lunch Company" className="mx-auto w-48 rounded-2xl shadow-xl" />
         <h1 className="mt-4 text-xl font-black">{t(lang, 'appName')}</h1>
         <p className="mt-1 text-xs text-muted-foreground">一款由学生同人社团开发的<br/>上海市文来高中食堂APP</p>
       </div>
