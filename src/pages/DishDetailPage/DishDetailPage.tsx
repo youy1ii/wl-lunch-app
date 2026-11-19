@@ -202,7 +202,7 @@ export default function DishDetailPage() {
                           ? <img src={displayAvatar} alt="" className="h-full w-full object-cover" />
                           : displayName.slice(0, 1).toUpperCase()}
                       </button>
-                      {followees.includes(r.author) ? (
+                      {!r.mine && (followees.includes(r.author) ? (
                         <button
                           type="button"
                           onClick={() => toggleFollow(r.author)}
@@ -218,7 +218,7 @@ export default function DishDetailPage() {
                         >
                           + 关注
                         </button>
-                      )}
+                      ))}
                       {isAdmin ? (
                         <button
                           type="button"
@@ -489,16 +489,22 @@ export default function DishDetailPage() {
               <div className="mt-3 max-h-16 w-full overflow-y-auto rounded-lg bg-muted/50 p-2 text-center text-[11px] leading-relaxed text-muted-foreground">
                 {profileCard === "WLLC2026" ? "文来食堂APP创建者" : "是否留下一些痕迹证明自己来过"}
               </div>
-              <button
-                type="button"
-                onClick={() => toggleFollow(profileCard)}
-                className={
-                  "mt-3 w-full rounded-full py-2 text-xs font-bold pressable " +
-                  (followees.includes(profileCard) ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground")
-                }
-              >
-                {followees.includes(profileCard) ? "已关注" : "关注"}
-              </button>
+              {((profileCardUid && profileCardUid === user?.uid) || profileCard === user?.username) ? (
+                <div className="mt-3 w-full rounded-full bg-muted py-2 text-center text-xs font-bold text-muted-foreground">
+                  这是我自己
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => toggleFollow(profileCard)}
+                  className={
+                    "mt-3 w-full rounded-full py-2 text-xs font-bold pressable " +
+                    (followees.includes(profileCard) ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground")
+                  }
+                >
+                  {followees.includes(profileCard) ? "已关注" : "关注"}
+                </button>
+              )}
             </div>
           </div>
         </div>,
