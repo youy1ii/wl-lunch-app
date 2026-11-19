@@ -27,11 +27,15 @@ export default function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const mainRef = useRef<HTMLElement>(null);
+  // 底部导航栏切页为瞬时切换，不播放切页动画；卡片进入/返回等其他路由照常播放
+  const skipTabAnimRef = useRef(false);
   // 下滑超过阈值时显示「返回上一级 + 回到顶部」浮标（捕获 main 内所有滚动容器）
   const [showFloatBtns, setShowFloatBtns] = useState(false);
   // 任何路由切换都回到顶部：真正的滚动容器是 main，而不是 window。
   // 用 rAF 再补一次，确保新页面挂载、布局稳定后仍停在顶部。
   useEffect(() => {
+    // 本次导航渲染已经消费过标记，重置以免影响下一次非导航栏跳转
+    skipTabAnimRef.current = false;
     const reset = () => {
       window.scrollTo(0, 0);
       const main = mainRef.current;
@@ -251,6 +255,11 @@ export default function AppShell() {
     { to: '/me', icon: UserRound, key: 'me', end: false },
   ];
 
+  // 导航栏切换：无动画；其他切页：按外观开关播放淡入动画
+  const pageAnimClass = skipTabAnimRef.current
+    ? ''
+    : settings.pageAnim !== false ? 'anim-page-drop' : 'anim-page';
+
   return (
     <div
       className={cn(
@@ -343,7 +352,7 @@ export default function AppShell() {
       })()}
 
       <main ref={mainRef} className={cn('relative flex-1 overflow-y-auto', !hideBottomNav && 'pb-40')}>
-        <div key={location.pathname} className={cn(settings.pageAnim !== false ? 'anim-page-drop' : 'anim-page', hideBottomNav && 'h-full')}>
+        <div key={location.pathname} className={cn(pageAnimClass, hideBottomNav && 'h-full')}>
           <Outlet />
         </div>
       </main>
@@ -397,6 +406,8 @@ export default function AppShell() {
             to={item.to}
             end={item.end}
             onClick={() => {
+              // 只在确实切换页面时标记跳过动画；点当前已激活的 tab 不标记，避免残留
+              if (item.to !== location.pathname) skipTabAnimRef.current = true;
               if (settings.scrollTopOnTab !== false) {
                 requestAnimationFrame(() => {
                   document.querySelector('main')?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
