@@ -66,7 +66,7 @@ body {
   background-size: 14px 14px !important;
   background-attachment: fixed !important;
   font-family: var(--font-sans);
-  overscroll-behavior: none;
+  overscroll-behavior: auto;
   -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -157,7 +157,13 @@ body {
 /* 微信式消息弹窗：从顶部滑入 */
 .wx-notif { animation: wx-drop-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
-html { scroll-behavior: smooth; overscroll-behavior: none; }
+html { scroll-behavior: auto; overscroll-behavior: auto; }
+
+/* 手机端惯性滚动：手指离开后保持原生动量滑动，不因全局平滑/滚动链限制而"松手即停" */
+main, .overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: auto;
+}
 
 /* 按压反馈 */
 .pressable { transition: transform 0.12s ease, opacity 0.15s ease; }
