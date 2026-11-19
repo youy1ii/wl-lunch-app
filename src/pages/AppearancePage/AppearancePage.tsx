@@ -30,6 +30,7 @@ export default function AppearancePage() {
       opacity: 0.82,
       parallax: true,
       haptics: true,
+      pageAnim: true,
       font: null,
     });
     toast.success('已还原默认设置');
@@ -306,6 +307,10 @@ export default function AppearancePage() {
         <label className="flex items-center justify-between text-sm font-bold">
           {t(settings.lang, 'haptics')}
           <input type="checkbox" checked={settings.haptics} onChange={(e) => setSettings({ haptics: e.target.checked })} />
+        </label>
+        <label className="flex items-center justify-between text-sm font-bold">
+          {t(settings.lang, 'pageAnim')}
+          <input type="checkbox" checked={settings.pageAnim !== false} onChange={(e) => setSettings({ pageAnim: e.target.checked })} />
         </label>
         <label className="flex items-center justify-between text-sm font-bold">
           切页自动回顶

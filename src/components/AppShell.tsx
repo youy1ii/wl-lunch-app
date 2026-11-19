@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Trophy, UtensilsCrossed, UserRound } from 'lucide-react';
+import { Home, Trophy, UtensilsCrossed, UserRound, ArrowUp, ChevronLeft } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
 import LoginPage from '@/pages/LoginPage/LoginPage';
@@ -27,6 +27,8 @@ export default function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const mainRef = useRef<HTMLElement>(null);
+  // 下滑超过阈值时显示「返回上一级 + 回到顶部」浮标（捕获 main 内所有滚动容器）
+  const [showFloatBtns, setShowFloatBtns] = useState(false);
   // 任何路由切换都回到顶部：真正的滚动容器是 main，而不是 window。
   // 用 rAF 再补一次，确保新页面挂载、布局稳定后仍停在顶部。
   useEffect(() => {
@@ -45,6 +47,23 @@ export default function AppShell() {
     const raf = requestAnimationFrame(reset);
     return () => cancelAnimationFrame(raf);
   }, [location.pathname]);
+
+  // 监听 main 及其内部所有滚动容器：下滑超过 300px 显示返回/回顶浮标
+  // 依赖 phase：闪屏阶段 main 尚未挂载，必须等进入 app 阶段再注册。
+  useEffect(() => {
+    if (phase !== 'app') return;
+    const main = mainRef.current;
+    if (!main) return;
+    const onScroll = (e: Event) => {
+      const el = e.target as HTMLElement;
+      if (el && typeof el.scrollTop === 'number') setShowFloatBtns(el.scrollTop > 300);
+    };
+    main.addEventListener('scroll', onScroll, true);
+    return () => main.removeEventListener('scroll', onScroll, true);
+  }, [phase]);
+
+  // 切页后浮标复位
+  useEffect(() => { setShowFloatBtns(false); }, [location.pathname]);
 
   // 登录成功后强制回到主页：只在「未登录 → 已登录」这一刻跳转。
   // 初始值取当前登录态，这样刷新页面（会话恢复）不会误跳，只有真正登录/切换账号才回主页。
@@ -324,10 +343,38 @@ export default function AppShell() {
       })()}
 
       <main ref={mainRef} className={cn('relative flex-1 overflow-y-auto', !hideBottomNav && 'pb-40')}>
-        <div key={location.pathname} className={cn('anim-page', hideBottomNav && 'h-full')}>
+        <div key={location.pathname} className={cn(settings.pageAnim !== false ? 'anim-page-drop' : 'anim-page', hideBottomNav && 'h-full')}>
           <Outlet />
         </div>
       </main>
+
+      {/* 下滑浮标：左上角返回上一级 + 回到顶部，与下滑深度联动 */}
+      <div className={cn('pointer-events-none absolute inset-x-0 bottom-24 z-[250] flex justify-between px-4 transition-all duration-300', showFloatBtns ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3')}>
+        <button
+          type="button"
+          aria-label="返回上一级"
+          disabled={!showFloatBtns}
+          onClick={() => navigate(-1)}
+          className="pressable pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-card text-foreground shadow-xl ring-1 ring-black/10 backdrop-blur-md"
+        >
+          <ChevronLeft size={22} />
+        </button>
+        <button
+          type="button"
+          aria-label="回到顶部"
+          disabled={!showFloatBtns}
+          onClick={() => {
+            const main = mainRef.current;
+            if (!main) return;
+            const sc = main.querySelector<HTMLElement>('.overflow-y-auto') || main;
+            sc.scrollTo({ top: 0, behavior: 'smooth' });
+            main.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="pressable pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl"
+        >
+          <ArrowUp size={20} />
+        </button>
+      </div>
 
       {/* 顶部高斯模糊渐变（限制在手机卡片内） */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[250] h-10 backdrop-blur-[2px]" style={{ maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)' }} />

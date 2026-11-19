@@ -31,18 +31,6 @@ export default function DishDetailPage() {
   const [commentTab, setCommentTab] = useState<'all' | 'hot' | 'follow'>('hot');
   const [scrolled, setScrolled] = useState(0);
   const [profileCard, setProfileCard] = useState<string | null>(null);
-  const [showTop, setShowTop] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => {
-      const inner = scrollRef.current;
-      const outer = document.querySelector('main');
-      const y = (inner && inner.scrollTop > 0) ? inner.scrollTop : (outer ? outer.scrollTop : window.scrollY);
-      setShowTop(y > 300);
-    };
-    window.addEventListener('scroll', onScroll, true);
-    return () => window.removeEventListener('scroll', onScroll, true);
-  }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   if (!dish) {
@@ -79,7 +67,7 @@ export default function DishDetailPage() {
     <div className="relative h-full overflow-hidden" style={{ background: "var(--card)", marginBottom: "-8rem", paddingBottom: "8rem" }}>
       <div
         ref={scrollRef}
-        onScroll={(e) => { setScrolled(e.currentTarget.scrollTop); setShowTop(e.currentTarget.scrollTop > 300); }}
+        onScroll={(e) => { setScrolled(e.currentTarget.scrollTop); }}
         className="h-full overflow-y-auto pb-32" style={{ background: "var(--card)" }}
       >
         {/* 顶部大图区，随滚动收缩 */}
@@ -452,26 +440,6 @@ export default function DishDetailPage() {
           </div>
         </SheetContent>
       </Sheet>
-      {/* 回到顶部：portal 到 body，下滑 300px 后出现 */}
-      {createPortal(
-        <button
-          type="button"
-          onClick={() => {
-            const sc = document.querySelector('main .overflow-y-auto, [class*="overflow-y-auto"]');
-            if (sc) sc.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={
-            showTop
-              ? 'fixed bottom-24 right-4 z-[100] flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl pressable anim-pop'
-              : 'pointer-events-none fixed bottom-24 right-4 z-[100] flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-xl transition-opacity'
-          }
-          aria-label="回到顶部"
-        >
-          ↑
-        </button>,
-        document.body,
-      )}
-
       {/* 用户小卡片 */}
       {profileCard && createPortal(
         <div className="fixed inset-0 z-[310] flex items-center justify-center bg-black/60 p-4" onClick={() => setProfileCard(null)}>

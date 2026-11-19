@@ -117,7 +117,7 @@ function saveSession(user: IUser | null, isAdmin: boolean, readIds: number[]) {
 function loadSettings(): ISettings {
   const fb: ISettings = {
     lang: 'zh', accent: '#E8B923', bgColor: '', textColor: '', bgImage: null, bgBlur: 0,
-    frosted: true, opacity: 0.82, parallax: true, haptics: true, font: null,
+    frosted: true, opacity: 0.82, parallax: true, haptics: true, pageAnim: true, font: null,
   };
   try {
     const raw = localStorage.getItem(`${NS}:settings`);
@@ -444,6 +444,13 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     const { data } = await supabase.from('users').select('uid').in('role', ['teacher', 'admin']);
     return [...new Set(['00000000', ...(data || []).map((r: any) => r.uid).filter(Boolean)])];
   }, []);
+
+  // 群聊发言通知：推给除发信人外的所有管理员
+  const notifyGroup = useCallback(async (text: string, excludeUid?: string): Promise<boolean> => {
+    const targets = (await adminTargets()).filter((uid) => uid !== excludeUid);
+    if (!targets.length) return false;
+    return notify(targets, 'admin', `💬 管理员群：${text.slice(0, 40)}`);
+  }, [adminTargets, notify]);
 
   const upsertPref = useCallback(async (patch: Record<string, any>) => {
     if (!user?.uid) return;
@@ -830,7 +837,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     postAnnouncement, setBanners, setTipsQr, unreadAnnouncement, markAnnouncementRead,
     ticker, setTicker, myRatings, wants, toggleWant, notifications, markAllNotificationsRead,
     sendAdminMessage, togglePin,
-    hideBottomNav, setHideBottomNav,
+    hideBottomNav, setHideBottomNav, notifyGroup,
   };
 
   return <AppStore.Provider value={value}>{children}</AppStore.Provider>;

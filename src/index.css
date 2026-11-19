@@ -154,6 +154,35 @@ body {
 .anim-rise { animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-pop { animation: pop-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-page { animation: page-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* 切页降落动画（外观可开关）：从上方降落 + 波点聚合消散 + 模糊变高清，约 1 秒 */
+@keyframes page-drop {
+  0%   { opacity: 0; transform: translateY(-30px) scale(0.985); filter: blur(10px); }
+  55%  { opacity: 1; filter: blur(2px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes page-dots-out {
+  0%   { opacity: 0.55; transform: scale(1.04); }
+  100% { opacity: 0; transform: scale(1); }
+}
+.anim-page-drop {
+  position: relative;
+  animation: page-drop 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.anim-page-drop::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: inherit;
+  background-image: radial-gradient(var(--dot-tint, var(--foreground)) 1.4px, transparent 1.5px);
+  background-size: 16px 16px;
+  animation: page-dots-out 1s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .anim-page-drop, .anim-page-drop::after { animation: none; }
+}
 .anim-tier { animation: tier-zoom 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-float { animation: float-y 3s ease-in-out infinite; }
 /* 微信式消息弹窗：从顶部滑入 */

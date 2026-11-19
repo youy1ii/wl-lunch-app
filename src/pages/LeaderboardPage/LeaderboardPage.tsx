@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
@@ -22,7 +21,6 @@ export default function LeaderboardPage() {
   const [win, setWin] = useState<'all' | WindowId>('all');
   const [mode, setMode] = useState<'love' | 'hate'>('love');
   const navigate = useNavigate();
-  const [showTop, setShowTop] = useState(false);
 
   const pool = useMemo(() => {
     let list = dishes.filter((d) => votesOf(d) >= MIN_VOTES);
@@ -76,7 +74,7 @@ export default function LeaderboardPage() {
         </div>
 
         {/* 窗口内容 */}
-        <div className="h-full overflow-y-auto p-4 pb-28" style={{ height: 'calc(100% - 41px)' }} onScroll={(e) => setShowTop(e.currentTarget.scrollTop > 300)}>
+        <div className="h-full overflow-y-auto p-4 pb-28" style={{ height: 'calc(100% - 41px)' }}>
           {/* 窗口分类筛选 */}
           <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
             {tabs.map((tab) => (
@@ -188,24 +186,6 @@ export default function LeaderboardPage() {
           </div>
         </div>
       </div>
-      {createPortal(
-        <button
-          type="button"
-          onClick={() => {
-            const sc = document.querySelector('main .overflow-y-auto, [class*="overflow-y-auto"]');
-            if (sc) sc.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={
-            showTop
-              ? 'fixed bottom-24 right-4 z-[100] flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl pressable anim-pop'
-              : 'pointer-events-none fixed bottom-24 right-4 z-[100] flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-xl transition-opacity'
-          }
-          aria-label="回到顶部"
-        >
-          ↑
-        </button>,
-        document.body,
-      )}
     </div>
   );
 }

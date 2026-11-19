@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Send, Pin, Megaphone, ShieldBan, MoreVertical, Users, UserX, ShieldOff, AtSign, Volume2 } from 'lucide-react';
+import { X, Send, Pin, Megaphone, MoreVertical, Users, UserX, ShieldOff, AtSign, Volume2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
@@ -44,7 +44,7 @@ function AuthorAvatar({ name, avatar, isOwner, size = 'sm' }: { name: string; av
 }
 
 export default function AdminGroupChat({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { user, isAdmin, settings } = useApp();
+  const { user, isAdmin, settings, notifyGroup, setHideBottomNav } = useApp();
   const lang = settings.lang;
   const [messages, setMessages] = useState<AdminMessage[]>([]);
   const [members, setMembers] = useState<AdminMember[]>([]);
@@ -56,6 +56,8 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
   const [announceText, setAnnounceText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const isOwner = user?.uid === OWNER_UID || user?.username === 'WLLC2026';
+  // 每次打开群聊只显示本次打开后新收到的消息：记录打开时刻，关闭时清零。
+  const sessionStartRef = useRef<number>(0);
 
   // 群聊里的名字/头像是实时资料，不用消息发送时的快照（否则改了昵称头像后历史消息不同步）
   function resolveAuthor(uid: string, fallbackName: string) {
@@ -69,14 +71,18 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
 
   useEffect(() => {
     if (!open || !isAdmin) return;
+    setHideBottomNav(true); // 群聊打开时隐藏底栏，避免遮挡输入框
+    // 每次打开都是全新的聊天窗口：以打开时刻为界，只显示之后的新消息。
+    sessionStartRef.current = Date.now();
+    setMessages([]);
     load();
     loadMembers();
     const ch = supabase
       .channel('admin-messages')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'admin_messages' }, () => load())
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [open, isAdmin]);
+    return () => { supabase.removeChannel(ch); sessionStartRef.current = 0; setHideBottomNav(false); };
+  }, [open, isAdmin, setHideBottomNav]);
 
   async function load() {
     // 只取群聊相关的 kind。app_ 前缀是全局共享数据总线（反馈/通知/公告等），不进群聊。
@@ -85,7 +91,13 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
       .select('*')
       .in('kind', ['message', 'announcement', 'mention', 'activity'])
       .order('created_at', { ascending: true });
-    if (data) setMessages(data as AdminMessage[]);
+    if (!data) return;
+    const start = sessionStartRef.current;
+    // 打开时刻之前的历史一律不显示（含置顶公告），实现"每次打开清空"。
+    const fresh = start
+      ? (data as AdminMessage[]).filter((m) => new Date(m.created_at).getTime() >= start - 1000)
+      : [];
+    setMessages(fresh);
   }
 
   async function loadMembers() {
@@ -106,9 +118,9 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
 
   async function send() {
     const text = draft.trim();
-    if (!text || !user || !isOwner || sending) return;
+    if (!text || !user || sending) return;
     setSending(true);
-    await supabase.from('admin_messages').insert({
+    const { error } = await supabase.from('admin_messages').insert({
       author_uid: user.uid,
       author_name: user.nickname || user.realName || user.username,
       text,
@@ -116,6 +128,10 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
     });
     setDraft('');
     setSending(false);
+    if (!error) {
+      // 所有管理员都能发言，发言后通知群里其他人
+      void notifyGroup(`${user.nickname || user.realName || user.username}：${text}`, user.uid);
+    }
     load();
   }
 
@@ -173,7 +189,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
   const ownerMember = members.find((m) => m.uid === OWNER_UID);
 
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center px-4" style={{ paddingBottom: "calc(90px + env(safe-area-inset-bottom, 0px))" }} onClick={onClose}>
+    <div className="fixed inset-0 z-[400] flex items-center justify-center px-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className="anim-rise relative flex h-[78dvh] w-full max-w-md flex-col overflow-hidden rounded-3xl shadow-2xl"
@@ -333,29 +349,23 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
 
         {/* Input */}
         <div className="border-t p-3" style={{ borderColor: 'color-mix(in oklab, var(--border) 50%, transparent)' }}>
-          {isOwner ? (
-            <div className="flex items-center gap-2">
-              <input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-                placeholder="发送管理员消息..."
-                className="flex-1 rounded-full bg-muted px-4 py-2 text-sm outline-none"
-              />
-              <button
-                type="button"
-                onClick={send}
-                disabled={!draft.trim() || sending}
-                className="pressable flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
-              >
-                <Send size={16} />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground">
-              <ShieldBan size={14} /> 仅群主可发言
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+              placeholder="发送管理员消息..."
+              className="flex-1 rounded-full bg-muted px-4 py-2 text-base outline-none"
+            />
+            <button
+              type="button"
+              onClick={send}
+              disabled={!draft.trim() || sending}
+              className="pressable flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
+            >
+              <Send size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Manage member popup */}

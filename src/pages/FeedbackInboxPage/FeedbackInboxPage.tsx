@@ -53,37 +53,19 @@ export default function FeedbackInboxPage() {
 
   const lang = settings.lang;
 
-  // 按人分组为会话
+  // 每条反馈独立成一个会话窗口：一条建议/投诉 = 一行，点进去只有这一条和它的回复。
   const conversations = useMemo(() => {
-    const map = new Map<string, Conversation>();
-    for (const f of feedbacks) {
-      const key = f.anonymous ? '__anon__' : (f.authorUid || f.author || '__unknown__');
-      let c = map.get(key);
-      if (!c) {
-        c = {
-          key,
-          name: f.anonymous ? t(lang, 'anonymous') : (f.authorRealName || f.author || t(lang,'同学')),
-          uid: f.authorUid,
-          realName: f.authorRealName,
-          anonymous: f.anonymous,
-          items: [],
-          pending: 0,
-          lastText: '',
-        };
-        map.set(key, c);
-      }
-      c.items.push(f);
-      if (f.status === 'pending') c.pending++;
-    }
-    const list = [...map.values()];
-    for (const c of list) {
-      c.items.sort((a, b) =>
-        new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime(),
-      );
-      const last = c.items[c.items.length - 1];
-      c.lastAt = last?.repliedAt || last?.createdAt;
-      c.lastText = last?.status === 'replied' ? `↳ ${last.reply || ''}` : (last?.text || '');
-    }
+    const list: Conversation[] = feedbacks.map((f) => ({
+      key: `fb-${f.id}`,
+      name: f.anonymous ? t(lang, 'anonymous') : (f.authorRealName || f.author || t(lang, '同学')),
+      uid: f.authorUid,
+      realName: f.authorRealName,
+      anonymous: f.anonymous,
+      items: [f],
+      pending: f.status === 'pending' ? 1 : 0,
+      lastAt: f.repliedAt || f.createdAt,
+      lastText: f.status === 'replied' ? `↳ ${f.reply || ''}` : (f.text || ''),
+    }));
     list.sort((a, b) =>
       new Date(b.lastAt || 0).getTime() - new Date(a.lastAt || 0).getTime(),
     );

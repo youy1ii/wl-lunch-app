@@ -112,6 +112,7 @@ export interface ISettings {
   opacity: number; // 卡片不透明度 0.2-1
   parallax: boolean;
   haptics: boolean;
+  pageAnim?: boolean; // 切页降落/波点聚合/模糊变清晰动画，默认开
   font: string | null;
 }
 

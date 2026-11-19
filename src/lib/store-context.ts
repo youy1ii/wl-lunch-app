@@ -71,6 +71,7 @@ export interface AppStoreValue {
   switchAccount: (uid: string) => void;
   hideBottomNav: boolean;
   setHideBottomNav: (v: boolean) => void;
+  notifyGroup: (text: string, excludeUid?: string) => Promise<boolean>;
 }
 
 export const AppStore = createContext<AppStoreValue | null>(null);
