@@ -27,10 +27,6 @@ export default function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const mainRef = useRef<HTMLElement>(null);
-  // 底部导航栏切页用轻量过渡，卡片进入/返回等其他路由用完整动画。
-  // 用同步 ref 存「导航栏跳转的目标路径」：点击时立即赋值，与路由更新同一次事件里，
-  // 渲染时与当前路径比较即可，不受 setState 异步批次/effect 时序影响（避免动画闪现或抽动）。
-  const tabTargetRef = useRef<string | null>(null);
   // 下滑超过阈值时显示「返回上一级 + 回到顶部」浮标（捕获 main 内所有滚动容器）
   const [showFloatBtns, setShowFloatBtns] = useState(false);
   // 任何路由切换都回到顶部：真正的滚动容器是 main，而不是 window。
@@ -68,12 +64,6 @@ export default function AppShell() {
 
   // 切页后浮标复位
   useEffect(() => { setShowFloatBtns(false); }, [location.pathname]);
-
-  // 非导航栏跳转（卡片进入/返回）到达后，清掉 tab 目标标记；纯 ref 操作不触发重渲染，无竞态。
-  // 导航栏跳转时路径与标记相等，不会被清，停留期保持轻量过渡。
-  useEffect(() => {
-    if (tabTargetRef.current && tabTargetRef.current !== location.pathname) tabTargetRef.current = null;
-  }, [location.pathname]);
 
   // 登录成功后强制回到主页：只在「未登录 → 已登录」这一刻跳转。
   // 初始值取当前登录态，这样刷新页面（会话恢复）不会误跳，只有真正登录/切换账号才回主页。
@@ -262,8 +252,9 @@ export default function AppShell() {
   ];
 
   // 导航栏切换：轻量 0.22s 过渡（消除瞬间跳变的闪烁）；其他切页：按外观开关播放下拉动画。
-  // 同步 ref 与当前路径相等即为导航栏进入；重渲染时 ref 不变，动画 class 不跳变。
-  const fromTab = !!tabTargetRef.current && tabTargetRef.current === location.pathname;
+  // 用 NavLink 传的 location.state 判定来源，与 location 原子更新，无 ref/setState 时序竞态；
+  // 停在该页重渲染 state 不变，动画 class 不会跳变。
+  const fromTab = (location.state as { fromTab?: boolean } | null)?.fromTab === true;
   const pageAnimClass = fromTab
     ? 'anim-page-swap'
     : settings.pageAnim !== false ? 'anim-page-drop' : 'anim-page';
@@ -413,9 +404,8 @@ export default function AppShell() {
             key={item.key}
             to={item.to}
             end={item.end}
+            state={{ fromTab: true }}
             onClick={() => {
-              // 同步记录导航栏跳转目标，与路由更新在同一事件里，渲染时立即可读到
-              if (item.to !== location.pathname) tabTargetRef.current = item.to;
               if (settings.scrollTopOnTab !== false) {
                 requestAnimationFrame(() => {
                   document.querySelector('main')?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
