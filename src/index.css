@@ -64,7 +64,9 @@ html, body {
 body {
   background-image: radial-gradient(color-mix(in oklab, var(--dot-tint, var(--foreground)) 14%, transparent) 1.2px, transparent 1.3px) !important;
   background-size: 14px 14px !important;
-  background-attachment: fixed !important;
+  /* 不能用 background-attachment:fixed：iOS Safari 会因此禁用整页动量滚动（松手即停）。
+     body 本身 height:100% 不滚动，波点画在 body 上天然固定铺满视口，无需 fixed。 */
+  background-attachment: scroll !important;
   font-family: var(--font-sans);
   overscroll-behavior: auto;
   -webkit-tap-highlight-color: transparent;
