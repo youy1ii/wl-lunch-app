@@ -6,18 +6,14 @@ import { useApp } from '@/lib/store-context';
 import type { INotification } from '@/lib/types';
 import { avgOf, tierOf, tierLabel, votesOf } from '@/lib/mock-data';
 import type { IDish } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import { cn, fmtBJT } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import AdminGroupChat from '@/components/AdminGroupChat';
 
 // 通知时间是数据库 ISO 原文（如 2026-11-19T15:12:15.016632+00:00），
 // 直接显示会撑破窄下拉面板。统一压成「11-19 15:12」短格式。
 function shortTime(iso: string): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso.slice(0, 16);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  return fmtBJT(iso);
 }
 
 const PODIUM = [
@@ -232,7 +228,7 @@ export default function HomePage() {
             <div className="mt-4 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
               <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-[9px] font-black text-primary">{(emailDetail.adminRep || 'A').slice(0,1).toUpperCase()}</div>
               <span>{emailDetail.adminRep}</span>
-              <span>· {emailDetail.replyTime ? new Date(emailDetail.replyTime).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</span>
+              <span>· {emailDetail.replyTime ? fmtBJT(emailDetail.replyTime) : ''}</span>
             </div>
           </div>
         </div>,

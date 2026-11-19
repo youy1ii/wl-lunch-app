@@ -73,6 +73,8 @@ export default function RatingSlider({
   const trackRef = useRef<HTMLDivElement>(null);
   const [dragScore, setDragScore] = useState<number | null>(null);
   const [dragTierIdx, setDragTierIdx] = useState(-1);
+  // 震动去重：记录上次触发的 0.1 刻度，同一刻度不重复震；跨刻度微震，跨整数强震。
+  const lastDecimalRef = useRef<number | null>(null);
 
   const shown = dragScore ?? (value === 0 ? 1 : value);
   const shownTier = tierOf(Math.max(0.5, shown));
@@ -86,21 +88,30 @@ export default function RatingSlider({
     return 1 + ratio * 4;
   };
 
+  // 触感分级：每跨过一个 0.1 刻度轻震一下；正好落在整数档时给一记更强的反馈。
+  const hapticFor = (s: number) => {
+    const dec = Math.round(s * 10) / 10;
+    if (lastDecimalRef.current === dec) return;
+    lastDecimalRef.current = dec;
+    const isInteger = Math.abs(dec - Math.round(dec)) < 0.001;
+    buzz(haptics, isInteger ? [14, 24, 14] : 7);
+  };
+
   const onPointerDown = (e: React.PointerEvent) => {
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     const s = fromEvent(e.clientX);
     setDragScore(s);
     setDragTierIdx(tierIndexOf(Math.max(0.5, s)));
+    lastDecimalRef.current = null;
+    hapticFor(s); // 点按瞬间立即给反馈
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (dragScore === null) return;
     const s = fromEvent(e.clientX);
     setDragScore(s);
     const idx = tierIndexOf(Math.max(0.5, s));
-    if (idx !== dragTierIdx) {
-      setDragTierIdx(idx);
-      buzz(haptics, 12);
-    }
+    if (idx !== dragTierIdx) setDragTierIdx(idx);
+    hapticFor(s); // 每变化一个 0.1 就震一次，整数加强
   };
   const onPointerUp = (e: React.PointerEvent) => {
     const s = Math.max(1, Math.min(5, fromEvent(e.clientX)));
@@ -112,7 +123,7 @@ export default function RatingSlider({
     onChange(Math.max(1, Math.min(5, snapped)));
     setDragScore(null);
     setDragTierIdx(-1);
-    buzz(haptics);
+    lastDecimalRef.current = null;
   };
 
   const ratio = (shown - 1) / 4;
@@ -132,6 +143,7 @@ export default function RatingSlider({
 
       {/* 进度条：整条渐变填充 */}
       <div
+        data-rating-track
         ref={trackRef}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

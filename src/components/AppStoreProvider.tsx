@@ -184,10 +184,10 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
             u = {
               uid: row.uid || '00000000', username: row.username || 'WLLC2026',
               realName: row.real_name || 'WLLC2026', role: 'teacher',
-              bio: row.bio || '', avatar: row.avatar || '', showRealInfo: true,
+              bio: row.bio || '', avatar: row.avatar || '', nickname: row.nickname || row.real_name || 'WLLC2026', showRealInfo: true,
             } as any;
           } else {
-            u = { uid: '00000000', username: 'WLLC2026', realName: 'WLLC2026', role: 'teacher', bio: '', avatar: '', showRealInfo: true } as any;
+            u = { uid: '00000000', username: 'WLLC2026', realName: 'WLLC2026', role: 'teacher', bio: '', avatar: '', nickname: 'WLLC2026', showRealInfo: true } as any;
           }
           setIsAdmin(true);
           setUser(u);
@@ -206,7 +206,8 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
           const u: IUser = {
             uid: row.uid, username: row.username, realName: row.real_name || row.username,
             role: row.role || 'student', studentId: row.student_id, klass: row.klass,
-            grade: row.grade, bio: row.bio, avatar: row.avatar, showRealInfo: false,
+            grade: row.grade, bio: row.bio, avatar: row.avatar,
+            nickname: row.nickname || row.real_name || row.username, showRealInfo: false,
           } as any;
           setUser(u);
           const isT = row.role === 'teacher';
@@ -419,6 +420,10 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     if (prefRow) {
       const p = jparse(prefRow.text);
       setMyFrameId(p.myFrameId || ''); setProfileHeader(p.profileHeader || '');
+      // 昵称存于 app_pref（users 表无 nickname 列）：跨设备同步网名。
+      if (typeof p.nickname === 'string') {
+        setUser((prev) => prev && prev.nickname !== p.nickname ? { ...prev, nickname: p.nickname } : prev);
+      }
     }
   }, [user?.uid, user?.username, user?.role, isAdmin, buildDishes]);
 
@@ -720,10 +725,14 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     if (patch.grade !== undefined) dbPatch.grade = patch.grade;
     if (patch.realName !== undefined) dbPatch.real_name = patch.realName;
     if (patch.showRealInfo !== undefined) dbPatch.show_real_info = patch.showRealInfo;
-    if (patch.nickname !== undefined) dbPatch.nickname = patch.nickname;
-    if (Object.keys(dbPatch).length === 0) return Promise.resolve(true);
-    return Promise.resolve(supabase.from('users').update(dbPatch).eq('uid', targetUid).then(({ error }) => !error));
-  }, [readIds, user]);
+    // users 表没有 nickname 列：网名存进 app_pref（按 uid 隔离），否则整条 UPDATE 会报 42703
+    // 连带 bio/avatar/real_name 一起存不进去，造成跨设备不同步。
+    const nicknameWrite = patch.nickname !== undefined ? upsertPref({ nickname: patch.nickname }) : Promise.resolve();
+    const dbWrite = Object.keys(dbPatch).length === 0
+      ? Promise.resolve(true)
+      : supabase.from('users').update(dbPatch).eq('uid', targetUid).then(({ error }) => !error);
+    return Promise.all([dbWrite, nicknameWrite]).then(([ok]) => ok);
+  }, [readIds, user, upsertPref]);
 
   /* ---------------- 公告 / Banner / 滚动通知 / 赞赏码 ---------------- */
   const postAnnouncement = useCallback((

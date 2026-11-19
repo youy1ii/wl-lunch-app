@@ -3,7 +3,7 @@ import { X, Send, Pin, Megaphone, ShieldBan, MoreVertical, Users, UserX, ShieldO
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
+import { cn, fmtBJT } from '@/lib/utils';
 
 interface AdminMessage {
   id: number;
@@ -306,7 +306,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
                       {author.name}
                       {m.author_uid === OWNER_UID && <span className="ml-1 rounded-md bg-emerald-500 px-1 py-0.5 text-[8px] font-black text-white">总管理员</span>}
                     </span>
-                    <span>{new Date(m.created_at).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    <span>{fmtBJT(m.created_at)}</span>
                     {isOwner && m.author_uid !== OWNER_UID && (
                       <button
                         type="button"

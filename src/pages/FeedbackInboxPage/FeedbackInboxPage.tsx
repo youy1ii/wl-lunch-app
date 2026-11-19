@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/lib/store-context';
 import type { IFeedback } from '@/lib/types';
 import { t } from '@/lib/i18n';
-import { cn, isOwnerMark, isOwnerUser } from '@/lib/utils';
+import { cn, isOwnerMark, isOwnerUser, fmtBJT, sameBJTDay } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface Conversation {
@@ -23,11 +23,8 @@ function fmtTime(iso?: string): string {
   if (!iso) return '';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return '';
-  const now = new Date();
-  if (d.toDateString() === now.toDateString()) {
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-  return d.toLocaleDateString([], { month: '2-digit', day: '2-digit' });
+  // 统一北京时间：今天只显示时分，否则显示月-日 时分
+  return fmtBJT(d, !sameBJTDay(d, new Date()));
 }
 
 // 总管理员头像固定薄荷绿 + 泛光，不受上传头像影响

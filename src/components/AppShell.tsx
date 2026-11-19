@@ -7,6 +7,7 @@ import { t } from '@/lib/i18n';
 import LoginPage from '@/pages/LoginPage/LoginPage';
 import AnnouncePopup from '@/components/AnnouncePopup';
 import { cn } from '@/lib/utils';
+import { buzz } from '@/lib/haptics';
 import type { Lang } from '@/lib/types';
 
 // 每种界面语言一套字体栈：切换语言时整套 UI 字形跟着变（用户自定义字体优先）
@@ -112,6 +113,23 @@ export default function AppShell() {
     document.documentElement.style.fontFamily = stack;
     document.body.style.fontFamily = stack;
   }, [settings.lang, settings.font]);
+
+  // 全局点击触感：任何按钮/链接点按都给一记轻微反馈（非滑动），尊重 haptics 开关。
+  // 打分滑块的细粒度震动由 RatingSlider 自己处理，这里只兜住普通点击，避免重复。
+  useEffect(() => {
+    if (!settings.haptics) return;
+    const onClick = (e: MouseEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (!el) return;
+      const hit = el.closest('button, a, [role="button"], input[type="checkbox"], label');
+      if (!hit) return;
+      // 打分滑块区域自己处理震动，跳过以免叠加
+      if (hit.closest('[data-rating-track]')) return;
+      buzz(true, 8);
+    };
+    document.addEventListener('pointerup', onClick as EventListener);
+    return () => document.removeEventListener('pointerup', onClick as EventListener);
+  }, [settings.haptics]);
 
   useEffect(() => {
     if (notifications.length > prevNotifCount.current) {

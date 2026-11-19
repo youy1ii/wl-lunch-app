@@ -19,7 +19,7 @@ export default function ReportPage() {
   const top = scored.slice(0, 3);
   const bottom = [...scored].slice(-3).reverse();
   const most = [...dishes].sort((a, b) => b.reviews.length - a.reviews.length)[0];
-  const today = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+  const today = new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric' }).format(new Date());
 
   const dish = dishId !== 'all' ? dishes.find((d) => d.id === dishId) : null;
 

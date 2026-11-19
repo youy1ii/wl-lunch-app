@@ -8,7 +8,7 @@ import { avgOf, tierOf, tierLabel, tierByScore, votesOf, TIERS } from '@/lib/moc
 import { t } from '@/lib/i18n';
 import RatingSlider from '@/components/RatingSlider';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
+import { cn, fmtBJT } from '@/lib/utils';
 
 const PREVIEW_REPLIES = 2;
 
@@ -243,7 +243,7 @@ export default function DishDetailPage() {
                     </span>
                   </div>
                   <p className="mt-1.5 text-sm leading-relaxed">{r.text}</p>
-                  {r.createdAt && <p className="mt-0.5 text-[10px] text-muted-foreground/60">{new Date(r.createdAt).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>}
+                  {r.createdAt && <p className="mt-0.5 text-[10px] text-muted-foreground/60">{fmtBJT(r.createdAt)}</p>}
 
                   {/* 操作行 */}
                   <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
