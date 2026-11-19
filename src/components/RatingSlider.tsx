@@ -77,8 +77,10 @@ export default function RatingSlider({
       {/* 巨大数字 */}
       <div className="mb-5 mt-2 flex flex-col items-center">
         <div className="flex items-baseline gap-1">
+          {/* key 绑定整数档：滑动每跨到一个新整数就重新挂载，触发果冻弹跳（与档位标签 anim-pop 同质感） */}
           <span
-            className="text-8xl font-black leading-none transition-colors duration-200"
+            key={Math.floor(shown)}
+            className="anim-pop text-8xl font-black leading-none transition-colors duration-200"
             style={{ color: shownTier.color }}
           >
             {shown.toFixed(1)}
