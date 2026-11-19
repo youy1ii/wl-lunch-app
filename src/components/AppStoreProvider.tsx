@@ -795,8 +795,14 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     })();
   }, [loadAll]);
 
+  // 统一管理员判定：session 标志 或 teacher 角色 或总管理员账号。
+  // 邀请码注册的普通管理员 role=teacher 但 session 的 isAdmin 标志可能为 false（completeProfile 写死 false），
+  // 导致金框/标签/管理入口全部不显示——这里按角色补齐，所有消费点一致。
+  const isAdminEffective = isAdmin || user?.role === 'teacher' ||
+    user?.username === 'WLLC2026' || user?.uid === '00000000';
+
   const value: AppStoreValue = {
-    user, isAdmin, dishes, announcements, banners, feedbacks, tipsQr, settings, setSettings,
+    user, isAdmin: isAdminEffective, dishes, announcements, banners, feedbacks, tipsQr, settings, setSettings,
     loginWithPhone, loginWithWechat, loginWithAccountPwd, completeProfile, logout, switchAccount, savedAccounts,
     addReview, toggleLike, deleteReview, updateReview, replyReview,
     addFeedback, replyFeedback, addDish, deleteDish, banUser, toggleDishNew,

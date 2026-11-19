@@ -15,6 +15,8 @@ interface Entry {
   desc: string;
   color: string;
   ownerOnly?: boolean;
+  // 普通管理员（有邀请码的老师）可用；未标记为 true 的仅总管理员可见
+  teacherAllowed?: boolean;
 }
 
 interface Group {
@@ -33,9 +35,9 @@ export default function AdminPage() {
       title: t(lang, 'admDataReport'),
       items: [
         { to: '/admin/report', icon: FileText, label: t(lang, 'admReport'), desc: t(lang, 'admReportDesc'), color: '#E8B923' },
-        { to: '/dish-admin', icon: UtensilsCrossed, label: t(lang, 'adminDishes'), desc: t(lang, 'admDishesDesc'), color: '#5B8C5A' },
+        { to: '/dish-admin', icon: UtensilsCrossed, label: t(lang, 'adminDishes'), desc: t(lang, 'admDishesDesc'), color: '#5B8C5A', teacherAllowed: true },
         { to: '/user-management', icon: Users, label: t(lang, 'admUsers'), desc: t(lang, 'admUsersDesc'), color: '#38B6FF' },
-        { to: '/feedback-inbox', icon: Mail, label: t(lang, 'feedbackInbox'), desc: t(lang, 'admFeedbackDesc'), color: '#8B5CF6' },
+        { to: '/feedback-inbox', icon: Mail, label: t(lang, 'feedbackInbox'), desc: t(lang, 'admFeedbackDesc'), color: '#8B5CF6', teacherAllowed: true },
       ],
     },
     {
@@ -72,7 +74,8 @@ export default function AdminPage() {
 
       <div className="flex-1 space-y-7 overflow-y-auto px-4 py-6">
         {groups.map((g) => {
-          const items = g.items.filter((it) => !it.ownerOnly || isOwner);
+          // 普通管理员只看 teacherAllowed（菜品管理、反馈信箱）；总管理员看全部
+          const items = g.items.filter((it) => isOwner || it.teacherAllowed);
           if (items.length === 0) return null;
           return (
             <section key={g.title}>
