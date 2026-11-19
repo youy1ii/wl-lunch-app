@@ -7,11 +7,13 @@ import type { IAnnouncement } from '@/lib/types';
 
 interface AdminProfile {
   username: string;
+  nickname?: string;
+  real_name?: string;
   avatar?: string;
 }
 
 export default function AnnouncePopup({ announcement }: { announcement: IAnnouncement }) {
-  const { markAnnouncementRead, settings } = useApp();
+  const { markAnnouncementRead, settings, user, savedAccounts } = useApp();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canClose, setCanClose] = useState(false);
   const [admin, setAdmin] = useState<AdminProfile | null>(null);
@@ -32,21 +34,29 @@ export default function AnnouncePopup({ announcement }: { announcement: IAnnounc
 
   useEffect(() => {
     let cancelled = false;
+    const uid = announcement.authorUid || '00000000';
+    // 公告作者资料优先取本地会话（管理员账号不在 users 表里，昵称/头像只存在本地）
+    const local = uid === user?.uid
+      ? user
+      : savedAccounts.find((a) => a.user.uid === uid)?.user;
+    if (local) {
+      setAdmin({ username: local.username, nickname: local.nickname, real_name: local.realName, avatar: local.avatar });
+      return () => { cancelled = true; };
+    }
     (async () => {
-      const uid = announcement.authorUid || '00000000';
       const { data } = await supabase
         .from('users')
-        .select('username, avatar')
+        .select('username, real_name, avatar')
         .eq('uid', uid)
         .maybeSingle();
       if (!cancelled && data) setAdmin(data as AdminProfile);
     })();
     return () => { cancelled = true; };
-  }, [announcement.authorUid]);
+  }, [announcement.authorUid, user, savedAccounts]);
 
-  const adminName = admin?.username || '管理员';
-  const adminAvatar = admin?.avatar || adminName.slice(0, 1);
   const isOwner = announcement.authorUid === '00000000';
+  const adminName = admin?.nickname || admin?.real_name || admin?.username || '管理员';
+  const adminAvatar = admin?.avatar || adminName.slice(0, 1);
   const avatarBg = isOwner
     ? 'bg-gradient-to-br from-emerald-300 to-emerald-500 text-emerald-950 ring-emerald-400/80 shadow-[0_0_14px_rgba(52,211,153,0.6)]'
     : 'bg-gradient-to-br from-amber-300 to-amber-500 text-amber-950 ring-amber-400/80 shadow-[0_0_14px_rgba(251,191,36,0.6)]';
@@ -59,7 +69,11 @@ export default function AnnouncePopup({ announcement }: { announcement: IAnnounc
       <div className="card-solid w-full max-w-md rounded-2xl p-6 shadow-2xl" style={{ maxHeight: '85%' }}>
         <div className="mb-3 flex items-center gap-2.5">
           <div className={'flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-base font-black ring-2 ' + avatarBg}>
-            {adminAvatar}
+            {adminAvatar.startsWith('data:') ? (
+              <img src={adminAvatar} alt="" className="h-full w-full object-cover" />
+            ) : (
+              adminAvatar
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 text-sm font-black leading-tight">

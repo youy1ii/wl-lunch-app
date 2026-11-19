@@ -92,7 +92,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
     // 系统里管理员的 role 是 teacher，历史数据里也有 admin，两者都要取
     const { data } = await supabase
       .from('users')
-      .select('uid, username, nickname, real_name, role, avatar')
+      .select('uid, username, real_name, role, avatar')
       .in('role', ['admin', 'teacher'])
       .order('uid');
     if (data) setMembers(data as AdminMember[]);
