@@ -27,15 +27,15 @@ export default function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const mainRef = useRef<HTMLElement>(null);
-  // 底部导航栏切页为瞬时切换，不播放切页动画；卡片进入/返回等其他路由照常播放
-  const skipTabAnimRef = useRef(false);
+  // 底部导航栏切页为瞬时切换，不播放切页动画；卡片进入/返回等其他路由照常播放。
+  // 用 state 存「本次跳转的目标路径」而不是布尔 ref：这样即使数据加载回来触发重渲染，
+  // 停留在该页期间也一律不带动画 class，避免动画在切完之后才突然冒出来闪一下。
+  const [skipAnimPath, setSkipAnimPath] = useState<string | null>(null);
   // 下滑超过阈值时显示「返回上一级 + 回到顶部」浮标（捕获 main 内所有滚动容器）
   const [showFloatBtns, setShowFloatBtns] = useState(false);
   // 任何路由切换都回到顶部：真正的滚动容器是 main，而不是 window。
   // 用 rAF 再补一次，确保新页面挂载、布局稳定后仍停在顶部。
   useEffect(() => {
-    // 本次导航渲染已经消费过标记，重置以免影响下一次非导航栏跳转
-    skipTabAnimRef.current = false;
     const reset = () => {
       window.scrollTo(0, 0);
       const main = mainRef.current;
@@ -68,6 +68,11 @@ export default function AppShell() {
 
   // 切页后浮标复位
   useEffect(() => { setShowFloatBtns(false); }, [location.pathname]);
+
+  // 到达非导航栏目标（卡片进入/返回等）后清掉跳过标记，保证后续导航栏点击能重新生效
+  useEffect(() => {
+    if (skipAnimPath && skipAnimPath !== location.pathname) setSkipAnimPath(null);
+  }, [location.pathname, skipAnimPath]);
 
   // 登录成功后强制回到主页：只在「未登录 → 已登录」这一刻跳转。
   // 初始值取当前登录态，这样刷新页面（会话恢复）不会误跳，只有真正登录/切换账号才回主页。
@@ -255,9 +260,11 @@ export default function AppShell() {
     { to: '/me', icon: UserRound, key: 'me', end: false },
   ];
 
-  // 导航栏切换：无动画；其他切页：按外观开关播放下拉清晰动画
-  const pageAnimClass = skipTabAnimRef.current
-    ? ''
+  // 导航栏切换：轻量 0.22s 过渡（消除瞬间跳变的闪烁）；其他切页：按外观开关播放下拉动画。
+  // 用「目标路径相等」判断而非布尔标记：数据加载回来重渲染时不会换成另一套动画导致抽动。
+  const fromTab = !!skipAnimPath && skipAnimPath === location.pathname;
+  const pageAnimClass = fromTab
+    ? 'anim-page-swap'
     : settings.pageAnim !== false ? 'anim-page-drop' : 'anim-page';
 
   return (
@@ -406,8 +413,8 @@ export default function AppShell() {
             to={item.to}
             end={item.end}
             onClick={() => {
-              // 只在确实切换页面时标记跳过动画；点当前已激活的 tab 不标记，避免残留
-              if (item.to !== location.pathname) skipTabAnimRef.current = true;
+              // 记录本次导航栏跳转目标；到达后整个停留期都无动画，直到发生别的跳转
+              if (item.to !== location.pathname) setSkipAnimPath(item.to);
               if (settings.scrollTopOnTab !== false) {
                 requestAnimationFrame(() => {
                   document.querySelector('main')?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });

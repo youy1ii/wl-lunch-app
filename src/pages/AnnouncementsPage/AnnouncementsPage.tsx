@@ -1,20 +1,13 @@
-import { ChevronLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
+import SettingsHeader from '@/components/SettingsHeader';
 
 export default function AnnouncementsPage() {
   const { announcements, settings } = useApp();
-  const navigate = useNavigate();
 
   return (
     <div className="flex h-full flex-col p-4">
-      <div className="mb-4 flex items-center gap-2">
-        <button type="button" onClick={() => navigate(-1)} className="rounded-full bg-card p-2 shadow-sm">
-          <ChevronLeft size={18} />
-        </button>
-        <h1 className="text-lg font-black">{t(settings.lang, 'announcements')}</h1>
-      </div>
+      <SettingsHeader title={t(settings.lang, 'announcements')} />
       <div className="space-y-3 overflow-y-auto">
         {announcements.map((a) => {
           const isOwner = a.authorUid === '00000000';

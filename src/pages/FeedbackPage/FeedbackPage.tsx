@@ -1,14 +1,12 @@
 import { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import SettingsHeader from '@/components/SettingsHeader';
 
 export default function FeedbackPage() {
   const { feedbacks, settings, addFeedback } = useApp();
-  const navigate = useNavigate();
   const [kind, setKind] = useState<'suggest' | 'complain'>('suggest');
   const [text, setText] = useState('');
   const [anon, setAnon] = useState(true);
@@ -27,12 +25,7 @@ export default function FeedbackPage() {
 
   return (
     <div className="flex h-full flex-col p-4">
-      <div className="mb-4 flex items-center gap-2">
-        <button type="button" onClick={() => navigate(-1)} className="rounded-full bg-card p-2 shadow-sm">
-          <ChevronLeft size={18} />
-        </button>
-        <h1 className="text-lg font-black">{t(settings.lang, 'feedback')}</h1>
-      </div>
+      <SettingsHeader title={t(settings.lang, 'feedback')} />
 
       <div className="card-solid space-y-3 rounded-2xl p-4 shadow-sm">
         <div className="flex gap-2">

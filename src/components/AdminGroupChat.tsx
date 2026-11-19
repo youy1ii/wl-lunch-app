@@ -370,7 +370,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
 
         {/* Manage member popup */}
         {manageTarget && (
-          <div className="absolute inset-0 z-20 flex items-end justify-center bg-black/40" onClick={() => setManageTarget(null)}>
+          <div className="absolute inset-0 z-20 flex anim-sheet-mask items-end justify-center bg-black/40" onClick={() => setManageTarget(null)}>
             <div
               className="anim-rise w-full rounded-t-3xl p-4" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))", background: 'var(--card)' }}
               onClick={(e) => e.stopPropagation()}

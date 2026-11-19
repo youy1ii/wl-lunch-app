@@ -1,12 +1,11 @@
-import { ChevronLeft, ShieldBan, Send } from 'lucide-react';
+import { ShieldBan, Send } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/lib/store-context';
 import { toast } from 'sonner';
 import { t } from '@/lib/i18n';
+import SettingsHeader from '@/components/SettingsHeader';
 
 export default function UserManagementPage() {
-  const navigate = useNavigate();
   const { user, banUser, sendAdminMessage , settings} = useApp();
   const lang = settings.lang;
   const isOwner = user?.uid === '00000000';
@@ -15,12 +14,7 @@ export default function UserManagementPage() {
 
   return (
     <div className="flex h-full flex-col p-4">
-      <div className="mb-4 flex items-center gap-2">
-        <button type="button" onClick={() => navigate(-1)} className="rounded-full bg-card p-2 shadow-sm">
-          <ChevronLeft size={18} />
-        </button>
-        <h1 className="text-lg font-black">{t(lang,'👤 用户管理')}</h1>
-      </div>
+      <SettingsHeader title={t(lang,'👤 用户管理')} />
 
       <div className="space-y-3 overflow-y-auto">
         <div className="card-solid rounded-2xl p-4 shadow-sm">

@@ -1,29 +1,23 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, Plus, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, Trash2 } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
 import { WINDOWS } from '@/lib/mock-data';
 import { t } from '@/lib/i18n';
 import { toast } from 'sonner';
 import type { WindowId } from '@/lib/types';
+import SettingsHeader from '@/components/SettingsHeader';
 
 export default function DishAdminPage() {
   const { dishes, settings, addDish, deleteDish, toggleDishNew, setDishImage, setDishMeal } = useApp();
   const lang = settings.lang;
-  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [win, setWin] = useState<WindowId>('doumian');
 
   return (
     <div className="flex h-full flex-col p-4">
-      <div className="mb-4 flex items-center gap-2">
-        <button type="button" onClick={() => navigate(-1)} className="rounded-full bg-card p-2 shadow-sm">
-          <ChevronLeft size={18} />
-        </button>
-        <h1 className="text-lg font-black">{t(lang,'菜品管理')}</h1>
-      </div>
+      <SettingsHeader title={t(lang,'菜品管理')} />
 
       <div className="card-solid rounded-2xl p-4 shadow-sm">
         <div className="flex gap-2">

@@ -494,8 +494,8 @@ export default function DishDetailPage() {
 
       {/* 确认弹窗 */}
       {confirm && createPortal(
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={() => setConfirm(null)}>
-          <div className="anim-rise w-full max-w-sm rounded-3xl bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex anim-sheet-mask items-end justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={() => setConfirm(null)}>
+          <div className="anim-sheet-up w-full max-w-sm rounded-3xl bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
               <ShieldBan size={22} />
             </div>

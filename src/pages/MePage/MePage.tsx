@@ -196,9 +196,9 @@ export default function MePage() {
 
       {/* 我的评价弹层 */}
       {showMine && createPortal(
-        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowMine(false)}>
+        <div className="fixed inset-0 z-[310] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setShowMine(false)}>
           <div
-            className="anim-rise card-solid max-h-[75%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5"
+            className="anim-sheet-up card-solid max-h-[75%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5"
             style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -234,8 +234,8 @@ export default function MePage() {
       )}
 
       {showFollowers && createPortal(
-        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowFollowers(false)}>
-          <div className="anim-rise card-solid max-h-[75%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[310] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setShowFollowers(false)}>
+          <div className="anim-sheet-up card-solid max-h-[75%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }} onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-black">粉丝</h3>
               <button type="button" onClick={() => setShowFollowers(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
@@ -247,8 +247,8 @@ export default function MePage() {
       )}
 
       {showFollowing && createPortal(
-        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowFollowing(false)}>
-          <div className="anim-rise card-solid max-h-[75%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[310] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setShowFollowing(false)}>
+          <div className="anim-sheet-up card-solid max-h-[75%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }} onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-black">关注</h3>
               <button type="button" onClick={() => setShowFollowing(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
@@ -266,8 +266,8 @@ export default function MePage() {
       )}
       {/* 评价操作卡：前往菜品评论区 / 删除 */}
       {actionReview && createPortal(
-        <div className="fixed inset-0 z-[320] flex items-end justify-center bg-black/50" onClick={() => setActionReview(null)}>
-          <div className="anim-rise w-full max-w-md rounded-t-3xl bg-card p-5 shadow-2xl" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[320] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setActionReview(null)}>
+          <div className="anim-sheet-up w-full max-w-md rounded-t-3xl bg-card p-5 shadow-2xl" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 text-center text-sm font-black">{actionReview.dishName}</div>
             <button
               type="button"
@@ -318,8 +318,8 @@ export default function MePage() {
 
       {/* 关注操作卡：取消关注 */}
       {actionFollow && createPortal(
-        <div className="fixed inset-0 z-[320] flex items-end justify-center bg-black/50" onClick={() => setActionFollow(null)}>
-          <div className="anim-rise w-full max-w-md rounded-t-3xl bg-card p-5 shadow-2xl" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[320] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setActionFollow(null)}>
+          <div className="anim-sheet-up w-full max-w-md rounded-t-3xl bg-card p-5 shadow-2xl" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex flex-col items-center gap-2">
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-black text-primary-foreground">{actionFollow.slice(0, 1).toUpperCase()}</span>
               <span className="text-sm font-black">{actionFollow}</span>
@@ -402,9 +402,9 @@ export default function MePage() {
 
       {/* 编辑资料弹层 */}
       {showEdit && createPortal(
-        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowEdit(false)}>
+        <div className="fixed inset-0 z-[310] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setShowEdit(false)}>
           <div
-            className="anim-rise max-h-[80%] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl"
+            className="anim-sheet-up max-h-[80%] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl"
             style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -452,9 +452,9 @@ export default function MePage() {
 
       {/* 隐私设置弹层 */}
       {showPrivacy && createPortal(
-        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowPrivacy(false)}>
+        <div className="fixed inset-0 z-[310] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setShowPrivacy(false)}>
           <div
-            className="anim-rise max-h-[80%] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl"
+            className="anim-sheet-up max-h-[80%] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl"
             style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -491,9 +491,9 @@ export default function MePage() {
 
       {/* 头像框选择弹层 */}
       {showFrames && createPortal(
-        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowFrames(false)}>
+        <div className="fixed inset-0 z-[310] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setShowFrames(false)}>
           <div
-            className="anim-rise max-h-[80%] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl"
+            className="anim-sheet-up max-h-[80%] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl"
             style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -592,8 +592,8 @@ export default function MePage() {
 
       {/* 个性签名编辑弹层 */}
       {showBioEdit && createPortal(
-        <div className="fixed inset-0 z-[310] flex items-end justify-center bg-black/50" onClick={() => setShowBioEdit(false)}>
-          <div className="anim-rise w-full max-w-md rounded-t-3xl bg-card p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[310] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setShowBioEdit(false)}>
+          <div className="anim-sheet-up w-full max-w-md rounded-t-3xl bg-card p-5" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-black">个性签名</h3>
               <button type="button" onClick={() => setShowBioEdit(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
@@ -630,8 +630,8 @@ export default function MePage() {
       </button>
 
       {showSwitchAccount && createPortal(
-        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50" onClick={() => setShowSwitchAccount(false)}>
-          <div className="anim-rise card-solid w-full max-w-md rounded-t-3xl p-5" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setShowSwitchAccount(false)}>
+          <div className="anim-sheet-up card-solid w-full max-w-md rounded-t-3xl p-5" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-3 text-center text-sm font-black">{t(settings.lang, 'switchAccount')}</h3>
             {savedAccounts.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">{t(settings.lang, 'noSavedAccounts')}</p>}
             {savedAccounts.map((acc) => (

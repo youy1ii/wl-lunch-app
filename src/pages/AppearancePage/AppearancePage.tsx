@@ -1,16 +1,15 @@
 import { useRef } from 'react';
-import { ChevronLeft, Upload, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Upload, X } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import SettingsHeader from '@/components/SettingsHeader';
 
 const PRESET_COLORS = ['#FF4D2E', '#FF9F1C', '#38B6FF', '#5A8F3C', '#8A4FFF', '#C13584'];
 
 export default function AppearancePage() {
   const { settings, setSettings } = useApp();
-  const navigate = useNavigate();
   const imgRef = useRef<HTMLInputElement>(null);
   const fontRef = useRef<HTMLInputElement>(null);
 
@@ -75,12 +74,7 @@ export default function AppearancePage() {
 
   return (
     <div className="flex h-full flex-col p-4">
-      <div className="mb-4 flex items-center gap-2">
-        <button type="button" onClick={() => navigate(-1)} className="rounded-full bg-card p-2 shadow-sm">
-          <ChevronLeft size={18} />
-        </button>
-        <h1 className="text-lg font-black">{t(settings.lang, 'appearance')}</h1>
-      </div>
+      <SettingsHeader title={t(settings.lang, 'appearance')} />
 
       <div className="card-solid flex-1 space-y-5 overflow-y-auto rounded-2xl p-4 shadow-sm">
         <div>
