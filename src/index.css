@@ -233,7 +233,8 @@ main, .overflow-y-auto {
   border: 1px solid rgba(0,0,0,0.05);
 }
 .theme-light .frosted-on .card-solid {
-  background: rgba(255,255,255,0.75) !important;
+  /* 走 --card-alpha：浅色下卡片透明度滑块才能真正生效（此前写死 0.75 导致失效） */
+  background: color-mix(in oklab, var(--card) var(--card-alpha, 82%), transparent) !important;
   backdrop-filter: blur(12px) saturate(1.2);
   -webkit-backdrop-filter: blur(12px) saturate(1.2);
 }
