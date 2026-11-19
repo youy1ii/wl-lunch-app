@@ -18,6 +18,47 @@ function buzz(on: boolean, pattern: number | number[] = [8, 20, 8]) {
   navigator.vibrate(pattern);
 }
 
+/* 里程表式滚轮数字：每一位是一个 0-9 的纵向列，数值变化就 translateY 滚到目标位，
+   小数位同样逐位滚动。快速滑动时连续滚动，形成"数字掉落/滚轮"的动效。 */
+const DIGIT_EM = 1.12; // 每格高度（em），留一点余量避免裁掉字形上下缘
+
+function RollingDigit({ digit }: { digit: number }) {
+  return (
+    <span
+      className="relative inline-block overflow-hidden tabular-nums"
+      style={{ height: `${DIGIT_EM}em`, width: '0.6em', lineHeight: DIGIT_EM }}
+    >
+      <span
+        className="absolute inset-x-0 top-0 flex flex-col items-center transition-transform duration-200 ease-out"
+        style={{ transform: `translateY(-${digit * DIGIT_EM}em)`, willChange: 'transform' }}
+      >
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+          <span key={n} className="tabular-nums" style={{ height: `${DIGIT_EM}em`, lineHeight: DIGIT_EM }}>
+            {n}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+function RollingNumber({ value, color }: { value: number; color: string }) {
+  const chars = value.toFixed(1).split(''); // 如 ['3', '.', '0']
+  return (
+    <span className="inline-flex items-start font-black leading-none tabular-nums" style={{ color }}>
+      {chars.map((c, i) =>
+        c === '.' ? (
+          <span key={i} className="text-center" style={{ width: '0.32em', height: `${DIGIT_EM}em`, lineHeight: DIGIT_EM }}>
+            .
+          </span>
+        ) : (
+          <RollingDigit key={i} digit={Number(c)} />
+        ),
+      )}
+    </span>
+  );
+}
+
 export default function RatingSlider({
   value,
   onChange,
@@ -76,16 +117,12 @@ export default function RatingSlider({
     <div className="w-full select-none px-1 py-2">
       {/* 巨大数字 */}
       <div className="mb-5 mt-2 flex flex-col items-center">
-        <div className="flex items-baseline gap-1">
-          {/* key 绑定整数档：滑动每跨到一个新整数就重新挂载，触发果冻弹跳（与档位标签 anim-pop 同质感） */}
-          <span
-            key={Math.floor(shown)}
-            className="anim-pop text-8xl font-black leading-none transition-colors duration-200"
-            style={{ color: shownTier.color }}
-          >
-            {shown.toFixed(1)}
+        <div className="flex items-end gap-1">
+          {/* 每位数字独立滚轮：整数/小数变化都会滚动掉落；key 绑定整数档，跨整数时整块再弹一次果冻 */}
+          <span key={Math.floor(shown)} className="anim-pop text-8xl leading-none">
+            <RollingNumber value={shown} color={shownTier.color} />
           </span>
-          <span className="text-sm font-bold text-muted-foreground">/ 5.0</span>
+          <span className="mb-1 text-sm font-bold text-muted-foreground">/ 5.0</span>
         </div>
       </div>
 
