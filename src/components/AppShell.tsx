@@ -10,10 +10,12 @@ import { cn } from '@/lib/utils';
 import type { Lang } from '@/lib/types';
 
 // 每种界面语言一套字体栈：切换语言时整套 UI 字形跟着变（用户自定义字体优先）
+// 注意：非中文语言也必须在末尾保留中文字体兜底，否则界面里残留的中文会回退到系统宋体。
+const CJK_FALLBACK = "'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB'";
 const LANG_FONT_STACK: Record<Lang, string> = {
   zh: "'Noto Sans SC', 'LarkHackSafariFont', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif",
-  ja: "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, 'Noto Sans JP', sans-serif",
-  en: "Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+  ja: `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, 'Noto Sans JP', ${CJK_FALLBACK}, sans-serif`,
+  en: `Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, ${CJK_FALLBACK}, sans-serif`,
 };
 
 export default function AppShell() {
