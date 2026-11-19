@@ -127,7 +127,7 @@ export default function MePage() {
                 : effectiveFrameId === 'rainbow'
                   ? 'rounded-full p-1 shadow-xl'
                   : effectiveFrameId === 'beta'
-                    ? 'rounded-full p-1 bg-emerald-400 shadow-[0_0_18px_4px_rgba(52,211,153,0.95),0_0_38px_10px_rgba(52,211,153,0.6),0_0_60px_18px_rgba(52,211,153,0.3)]'
+                    ? 'rounded-full p-1 bg-emerald-400 shadow-[0_0_8px_2px_rgba(52,211,153,0.9),0_0_16px_4px_rgba(52,211,153,0.5),0_0_26px_6px_rgba(52,211,153,0.22)]'
                     : 'p-1'
             }
             style={effectiveFrameId === 'rainbow' ? { background: 'conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)' } : undefined}

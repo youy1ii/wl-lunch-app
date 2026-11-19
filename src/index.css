@@ -56,7 +56,15 @@ html, body, #root {
   height: 100%;
 }
 
+/* 全屏氛围底：手机和桌面都跟随自定义背景色，波点铺满整个视口，不再有两侧黑边 */
+html, body {
+  background-color: var(--app-bg, var(--background)) !important;
+}
+
 body {
+  background-image: radial-gradient(color-mix(in oklab, var(--dot-tint, var(--foreground)) 14%, transparent) 1.2px, transparent 1.3px) !important;
+  background-size: 14px 14px !important;
+  background-attachment: fixed !important;
   font-family: var(--font-sans);
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
@@ -73,13 +81,7 @@ body {
     align-items: center;
     justify-content: center;
   }
-  /* 两侧氛围区：跟随自定义背景色（--app-bg），消除黑边白边；波点无限延伸且按底色亮度自动黑白 */
-  body {
-    background-color: var(--app-bg, var(--background)) !important;
-    background-image: radial-gradient(color-mix(in oklab, var(--dot-tint, var(--foreground)) 14%, transparent) 1.2px, transparent 1.3px) !important;
-    background-size: 14px 14px !important;
-    background-attachment: fixed !important;
-  }
+  /* 两侧氛围底和波点已提升到全局 body，手机/桌面统一，见上方 */
   .app-frame {
     width: 100% !important;
     max-width: 468px !important;
@@ -106,13 +108,13 @@ body {
     0 0 60px rgba(232, 185, 35, 0.25);
 }
 
-/* 薄荷绿泛光（总管理员） */
+/* 薄荷绿泛光（总管理员）：范围收紧 */
 .glow-mint {
   box-shadow:
     0 0 0 3px #34D399,
-    0 0 18px rgba(52, 211, 153, 0.95),
-    0 0 38px rgba(52, 211, 153, 0.6),
-    0 0 60px rgba(52, 211, 153, 0.3);
+    0 0 8px rgba(52, 211, 153, 0.9),
+    0 0 16px rgba(52, 211, 153, 0.5),
+    0 0 26px rgba(52, 211, 153, 0.22);
 }
 
 /* 细滚动条 */

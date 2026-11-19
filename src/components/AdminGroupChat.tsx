@@ -18,12 +18,30 @@ interface AdminMessage {
 interface AdminMember {
   uid: string;
   username: string;
+  nickname?: string;
   real_name: string;
   role: string;
   avatar?: string;
 }
 
 const OWNER_UID = '00000000';
+
+// 群聊头像：支持自定义图片 / emoji / 首字，总管理员用薄荷绿描边泛光
+function AuthorAvatar({ name, avatar, isOwner, size = 'sm' }: { name: string; avatar?: string; isOwner: boolean; size?: 'sm' | 'md' }) {
+  const dim = size === 'md' ? 'h-9 w-9 text-sm' : 'h-8 w-8 text-xs';
+  const ring = isOwner
+    ? 'bg-emerald-500 text-white ring-2 ring-emerald-400 ring-offset-2 ring-offset-background shadow-[0_0_10px_rgba(52,211,153,0.45)]'
+    : 'bg-amber-500/80 text-white ring-2 ring-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.3)]';
+  return (
+    <div className={cn('flex shrink-0 items-center justify-center overflow-hidden rounded-full font-black', dim, ring)}>
+      {avatar?.startsWith('data:') ? (
+        <img src={avatar} alt="" className="h-full w-full object-cover" />
+      ) : (
+        avatar || name.slice(0, 1).toUpperCase()
+      )}
+    </div>
+  );
+}
 
 export default function AdminGroupChat({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user, isAdmin, settings } = useApp();
@@ -38,6 +56,16 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
   const [announceText, setAnnounceText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const isOwner = user?.uid === OWNER_UID || user?.username === 'WLLC2026';
+
+  // 群聊里的名字/头像是实时资料，不用消息发送时的快照（否则改了昵称头像后历史消息不同步）
+  function resolveAuthor(uid: string, fallbackName: string) {
+    if (uid === user?.uid) {
+      return { name: user.nickname || user.realName || user.username || fallbackName, avatar: user.avatar };
+    }
+    const m = members.find((x) => x.uid === uid);
+    if (m) return { name: m.nickname || m.real_name || m.username || fallbackName, avatar: m.avatar };
+    return { name: fallbackName, avatar: undefined };
+  }
 
   useEffect(() => {
     if (!open || !isAdmin) return;
@@ -64,7 +92,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
     // 系统里管理员的 role 是 teacher，历史数据里也有 admin，两者都要取
     const { data } = await supabase
       .from('users')
-      .select('uid, username, real_name, role, avatar')
+      .select('uid, username, nickname, real_name, role, avatar')
       .in('role', ['admin', 'teacher'])
       .order('uid');
     if (data) setMembers(data as AdminMember[]);
@@ -82,7 +110,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
     setSending(true);
     await supabase.from('admin_messages').insert({
       author_uid: user.uid,
-      author_name: user.realName || user.username,
+      author_name: user.nickname || user.realName || user.username,
       text,
       kind: 'message',
     });
@@ -96,7 +124,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
     if (!text || !user) return;
     await supabase.from('admin_messages').insert({
       author_uid: user.uid,
-      author_name: user.realName || user.username,
+      author_name: user.nickname || user.realName || user.username,
       text,
       kind: 'announcement',
       pinned: true,
@@ -130,7 +158,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
     if (!user) return;
     await supabase.from('admin_messages').insert({
       author_uid: user.uid,
-      author_name: user.realName || user.username,
+      author_name: user.nickname || user.realName || user.username,
       text: `@${target.username} 请查看此消息`,
       kind: 'mention',
     });
@@ -161,7 +189,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
             <div>
               <div className="text-sm font-black">管理员群</div>
               <div className="text-[10px] text-muted-foreground">
-                群主: {ownerMember?.real_name || ownerMember?.username || 'WLLC2026'} · {members.length}人
+                群主: {ownerMember?.nickname || ownerMember?.real_name || ownerMember?.username || 'WLLC2026'} · {members.length}人
               </div>
             </div>
           </div>
@@ -215,7 +243,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
               <div key={m.id} className="flex items-start gap-1.5 text-xs">
                 <Pin size={12} className="mt-0.5 shrink-0 text-primary" />
                 <div className="flex-1">
-                  <span className="font-bold">{m.author_name}：</span>
+                  <span className="font-bold">{resolveAuthor(m.author_uid, m.author_name).name}：</span>
                   {m.text}
                 </div>
               </div>
@@ -238,17 +266,10 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
                   onClick={() => { if (isOwner && m.uid !== OWNER_UID) setManageTarget(m); else setShowMembers(false); }}
                   className="pressable flex w-full items-center gap-3 rounded-xl p-2.5 text-left hover:bg-muted"
                 >
-                  <div className={cn(
-                    'flex h-9 w-9 items-center justify-center rounded-full text-sm font-black',
-                    m.uid === OWNER_UID
-                      ? 'bg-emerald-500 text-white ring-2 ring-emerald-400 ring-offset-2 ring-offset-background shadow-[0_0_10px_rgba(52,211,153,0.45)]'
-                      : 'bg-amber-500/80 text-white ring-2 ring-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.3)]',
-                  )}>
-                    {m.username.slice(0, 1).toUpperCase()}
-                  </div>
+                  <AuthorAvatar name={m.nickname || m.real_name || m.username} avatar={m.avatar} isOwner={m.uid === OWNER_UID} size="md" />
                   <div className="flex-1">
                     <div className="flex items-center gap-1 text-sm font-bold">
-                      {m.real_name || m.username}
+                      {m.nickname || m.real_name || m.username}
                       {m.uid === OWNER_UID && <span className="rounded-md bg-emerald-500 px-1.5 py-0.5 text-[9px] font-black text-white">总管理员</span>}
                     </div>
                     <div className="text-[10px] text-muted-foreground">UID: {m.uid}</div>
@@ -267,6 +288,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
           )}
           {normal.map((m) => {
             const mine = m.author_uid === user?.uid;
+            const author = resolveAuthor(m.author_uid, m.author_name);
             return (
               <div key={m.id} className={cn('mb-3 flex gap-2', mine && 'flex-row-reverse')}>
                 <button
@@ -275,18 +297,13 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
                     const target = members.find((mm) => mm.uid === m.author_uid);
                     if (isOwner && target && m.author_uid !== OWNER_UID) setManageTarget(target);
                   }}
-                  className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black',
-                    m.author_uid === OWNER_UID
-                      ? 'bg-emerald-500 text-white ring-2 ring-emerald-400 ring-offset-2 ring-offset-background shadow-[0_0_10px_rgba(52,211,153,0.45)]'
-                      : 'bg-amber-500/80 text-white ring-2 ring-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.3)]',
-                  )}
                 >
-                  {m.author_name.slice(0, 1).toUpperCase()}
+                  <AuthorAvatar name={author.name} avatar={author.avatar} isOwner={m.author_uid === OWNER_UID} />
                 </button>
                 <div className={cn('max-w-[75%]', mine && 'text-right')}>
                   <div className="mb-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground" style={{ justifyContent: mine ? 'flex-end' : 'flex-start' }}>
                     <span className="font-bold" style={{ color: m.author_uid === OWNER_UID ? 'var(--primary)' : undefined }}>
-                      {m.author_name}
+                      {author.name}
                       {m.author_uid === OWNER_UID && <span className="ml-1 rounded-md bg-emerald-500 px-1 py-0.5 text-[8px] font-black text-white">总管理员</span>}
                     </span>
                     <span>{new Date(m.created_at).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
@@ -349,11 +366,15 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-3 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-lg font-black">
-                  {manageTarget.username.slice(0, 1).toUpperCase()}
+                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-muted text-lg font-black">
+                  {manageTarget.avatar?.startsWith('data:') ? (
+                    <img src={manageTarget.avatar} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    manageTarget.avatar || (manageTarget.nickname || manageTarget.real_name || manageTarget.username).slice(0, 1).toUpperCase()
+                  )}
                 </div>
                 <div>
-                  <div className="text-sm font-black">{manageTarget.username}</div>
+                  <div className="text-sm font-black">{manageTarget.nickname || manageTarget.real_name || manageTarget.username}</div>
                   <div className="text-[10px] text-muted-foreground">UID: {manageTarget.uid}</div>
                 </div>
               </div>
