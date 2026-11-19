@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, Send, MessageCircle, Inbox } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/lib/store-context';
@@ -47,7 +47,7 @@ function Avatar({ name, admin }: { name: string; admin?: boolean }) {
 }
 
 export default function FeedbackInboxPage() {
-  const { feedbacks, replyFeedback, settings, user } = useApp();
+  const { feedbacks, replyFeedback, settings, user, setHideBottomNav } = useApp();
   const navigate = useNavigate();
   const [tab, setTab] = useState<'all' | 'pending' | 'replied'>('all');
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -97,6 +97,12 @@ export default function FeedbackInboxPage() {
     tab === 'all' || (tab === 'pending' ? c.pending > 0 : c.pending === 0),
   );
   const active = conversations.find((c) => c.key === activeKey) || null;
+
+  // 进入聊天会话时隐藏底部导航（像微信聊天页），让输入框贴底；离开时恢复。
+  useEffect(() => {
+    setHideBottomNav(!!activeKey);
+    return () => setHideBottomNav(false);
+  }, [activeKey, setHideBottomNav]);
 
   const pendingItems = active?.items.filter((f) => f.status === 'pending') || [];
   const currentTarget = replyTarget && pendingItems.some((f) => f.id === replyTarget)
@@ -201,7 +207,7 @@ export default function FeedbackInboxPage() {
                 onChange={(e) => setReplyText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') doReply(); }}
                 placeholder={t(lang, 'replyPlaceholder')}
-                className="flex-1 rounded-full bg-muted px-4 py-2.5 text-[15px] outline-none"
+                className="flex-1 rounded-full bg-muted px-4 py-2.5 text-base outline-none"
               />
               <button
                 type="button"

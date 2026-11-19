@@ -143,6 +143,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
   const [readIds, setReadIds] = useState<number[]>(initial.readIds);
   const [ticker, setTickerState] = useState('欢迎各位参与内测!');
   const [myRatings, setMyRatings] = useState<Record<number, number>>({});
+  const [hideBottomNav, setHideBottomNav] = useState(false);
   const [wants, setWantsState] = useState<number[]>(() => { try { return JSON.parse(localStorage.getItem('wl-lunch:wants') || '[]'); } catch { return []; } });
   const toggleWant = useCallback((id: number) => {
     setWantsState((prev) => {
@@ -577,22 +578,28 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     return true;
   })()), [user, notify, adminTargets, loadAll]);
 
-  const replyFeedback = useCallback((id: number, reply: string): Promise<boolean> =>
-    Promise.resolve((async () => {
-      const { data: row } = await supabase.from('feedbacks').select('text,author_uid,anonymous').eq('id', id).maybeSingle();
-      if (!row) return false;
-      const adminRep = user?.username || '管理员';
-      const now = new Date().toISOString();
+  const replyFeedback = useCallback((id: number, reply: string): Promise<boolean> => {
+    // 乐观更新：立即在本地标记已回复，UI 秒回，不再串行等网络（原来 select→update→notify→loadAll 要 ~5s）。
+    // 落库和通知放后台异步执行，失败时才回滚并重新拉取，保证数据最终一致。
+    const target = feedbacks.find((f) => f.id === id);
+    if (!target) return Promise.resolve(false);
+    const adminRep = user?.username || '管理员';
+    const now = new Date().toISOString();
+    setFeedbacks((prev) => prev.map((f) => f.id === id
+      ? { ...f, status: 'replied', reply, adminRep, repliedAt: now }
+      : f));
+    (async () => {
       const { error } = await supabase.from('feedbacks').update({
         status: 'replied', reply, admin_rep: adminRep, replied_at: now,
       }).eq('id', id);
-      if (error) return false;
-      if (!(row as any).anonymous && row.author_uid) {
-        await notify([row.author_uid], 'feedback', `你的反馈已收到管理员「${adminRep}」的回复：${reply.slice(0, 40)}`);
+      if (error) { loadAll(); return; }
+      if (!target.anonymous && target.authorUid) {
+        await notify([target.authorUid], 'feedback', `你的反馈已收到管理员「${adminRep}」的回复：${reply.slice(0, 40)}`);
       }
       loadAll();
-      return true;
-    })()), [user, notify, loadAll]);
+    })();
+    return Promise.resolve(true);
+  }, [user, notify, loadAll, feedbacks]);
 
   /* ---------------- 菜品管理 ---------------- */
   const addDish = useCallback((name: string, price: number, windowId: IDish['windowId']): Promise<boolean> => {
@@ -814,6 +821,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     postAnnouncement, setBanners, setTipsQr, unreadAnnouncement, markAnnouncementRead,
     ticker, setTicker, myRatings, wants, toggleWant, notifications, markAllNotificationsRead,
     sendAdminMessage, togglePin,
+    hideBottomNav, setHideBottomNav,
   };
 
   return <AppStore.Provider value={value}>{children}</AppStore.Provider>;

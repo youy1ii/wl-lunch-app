@@ -241,6 +241,16 @@ main, .overflow-y-auto {
   -webkit-backdrop-filter: blur(12px) saturate(1.2);
 }
 
+/* ===== 手机端输入框防自动缩放 =====
+   iOS Safari 会对 font-size < 16px 的输入框在聚焦时自动放大整页，
+   输入完还要手动缩回。统一把文本输入控件提到 16px，杜绝缩放。 */
+@media (max-width: 768px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* ===== 总结报告 PDF 导出打印样式 ===== */
 @media print {
   @page { size: A4; margin: 16mm; }

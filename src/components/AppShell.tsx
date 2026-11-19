@@ -19,7 +19,7 @@ const LANG_FONT_STACK: Record<Lang, string> = {
 };
 
 export default function AppShell() {
-  const { user, settings, unreadAnnouncement, notifications } = useApp();
+  const { user, settings, unreadAnnouncement, notifications, hideBottomNav } = useApp();
   const [phase, setPhase] = useState<'logo' | 'black' | 'app'>('logo');
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [settling, setSettling] = useState(false);
@@ -305,8 +305,8 @@ export default function AppShell() {
         );
       })()}
 
-      <main ref={mainRef} className="relative flex-1 overflow-y-auto pb-40">
-        <div key={location.pathname} className="anim-page">
+      <main ref={mainRef} className={cn('relative flex-1 overflow-y-auto', !hideBottomNav && 'pb-40')}>
+        <div key={location.pathname} className={cn('anim-page', hideBottomNav && 'h-full')}>
           <Outlet />
         </div>
       </main>
@@ -316,7 +316,8 @@ export default function AppShell() {
       {/* 底部高斯模糊渐变（限制在手机卡片内） */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[250] h-10 backdrop-blur-[2px]" style={{ maskImage: 'linear-gradient(to top, black, transparent)', WebkitMaskImage: 'linear-gradient(to top, black, transparent)' }} />
 
-      {/* 液态玻璃浮窗底栏：扁长药丸 */}
+      {/* 液态玻璃浮窗底栏：扁长药丸（进入聊天会话时隐藏，让输入框贴底） */}
+      {!hideBottomNav && (<>
       <nav
         style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
         className={cn(
@@ -371,6 +372,7 @@ export default function AppShell() {
           background: 'linear-gradient(to top, color-mix(in oklab, var(--card) 60%, transparent), transparent)',
         }}
       />
+      </>)}
 
       {unreadAnnouncement && <AnnouncePopup announcement={unreadAnnouncement} />}
     </div>

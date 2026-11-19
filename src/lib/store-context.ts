@@ -69,6 +69,8 @@ export interface AppStoreValue {
   togglePin: (id: number) => void;
   savedAccounts: { user: IUser; isAdmin: boolean }[];
   switchAccount: (uid: string) => void;
+  hideBottomNav: boolean;
+  setHideBottomNav: (v: boolean) => void;
 }
 
 export const AppStore = createContext<AppStoreValue | null>(null);
