@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { TIERS, tierIndexOf, tierOf } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
+import { buzz } from '@/lib/haptics';
 
 // 索引对齐 TIERS：0=夯 … 4=拉完了
 function quotesFor(name: string): string[] {
@@ -11,11 +12,6 @@ function quotesFor(name: string): string[] {
     '还行吧。',
     `喂，你这家伙吃${name}吃得蛮开心的嘛`,
   ];
-}
-
-function buzz(on: boolean, pattern: number | number[] = [8, 20, 8]) {
-  if (!on || !navigator.vibrate) return;
-  navigator.vibrate(pattern);
 }
 
 /* 里程表式滚轮数字：每一位是一个 0-9 的纵向列，数值变化就 translateY 滚到目标位，

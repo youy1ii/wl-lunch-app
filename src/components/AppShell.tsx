@@ -133,11 +133,21 @@ export default function AppShell() {
     document.body.style.fontFamily = stack;
   }, [settings.lang, settings.font]);
 
-  // 全局点击触感：任何按钮/链接点按都给一记轻微反馈（非滑动），尊重 haptics 开关。
-  // 打分滑块的细粒度震动由 RatingSlider 自己处理，这里只兜住普通点击，避免重复。
+  // 全局点击触感：仅在「轻点」时给反馈，滑动/拖动松手不震（避免滚动页面时乱震）。
+  // 打分滑块的细粒度震动由 RatingSlider 自己处理，这里跳过以免叠加。
   useEffect(() => {
     if (!settings.haptics) return;
-    const onClick = (e: MouseEvent) => {
+    let downX = 0;
+    let downY = 0;
+    let downT = 0;
+    const onDown = (e: PointerEvent) => {
+      downX = e.clientX;
+      downY = e.clientY;
+      downT = Date.now();
+    };
+    const onUp = (e: PointerEvent) => {
+      // 位移超过 10px 或按住超过 600ms，都属于滑动/长按，不视为点击
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 10 || Date.now() - downT > 600) return;
       const el = e.target as HTMLElement | null;
       if (!el) return;
       const hit = el.closest('button, a, [role="button"], input[type="checkbox"], label');
@@ -146,8 +156,12 @@ export default function AppShell() {
       if (hit.closest('[data-rating-track]')) return;
       buzz(true, 8);
     };
-    document.addEventListener('pointerup', onClick as EventListener);
-    return () => document.removeEventListener('pointerup', onClick as EventListener);
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('pointerup', onUp);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('pointerup', onUp);
+    };
   }, [settings.haptics]);
 
   useEffect(() => {
