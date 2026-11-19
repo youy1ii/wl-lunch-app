@@ -71,6 +71,8 @@ export default function RatingSlider({
   const [dragTierIdx, setDragTierIdx] = useState(-1);
   // 震动去重：记录上次触发的 0.1 刻度，同一刻度不重复震；跨刻度微震，跨整数强震。
   const lastDecimalRef = useRef<number | null>(null);
+  // 拖动判定用同步 ref，避免快速拖动时 React 尚未重渲染导致中间刻度被跳过
+  const draggingRef = useRef(false);
 
   const shown = dragScore ?? (value === 0 ? 1 : value);
   const shownTier = tierOf(Math.max(0.5, shown));
@@ -98,11 +100,12 @@ export default function RatingSlider({
     const s = fromEvent(e.clientX);
     setDragScore(s);
     setDragTierIdx(tierIndexOf(Math.max(0.5, s)));
+    draggingRef.current = true;
     lastDecimalRef.current = null;
     hapticFor(s); // 点按瞬间立即给反馈
   };
   const onPointerMove = (e: React.PointerEvent) => {
-    if (dragScore === null) return;
+    if (!draggingRef.current) return;
     const s = fromEvent(e.clientX);
     setDragScore(s);
     const idx = tierIndexOf(Math.max(0.5, s));
@@ -119,6 +122,7 @@ export default function RatingSlider({
     onChange(Math.max(1, Math.min(5, snapped)));
     setDragScore(null);
     setDragTierIdx(-1);
+    draggingRef.current = false;
     lastDecimalRef.current = null;
   };
 

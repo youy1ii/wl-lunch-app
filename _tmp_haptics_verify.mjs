@@ -53,12 +53,12 @@ const browser = await chromium.launch({ headless: true, executablePath: EDGE });
     // 轻点
     const a = window.__vibes.length;
     btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 1, pointerType: 'touch' }));
-    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1, pointerType: 'touch' }));
+    btn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1, pointerType: 'touch' }));
     const tap = window.__vibes.slice(a);
     // 滑动：按下后位移 30px 再抬起
     const b = window.__vibes.length;
     btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 1, pointerType: 'touch' }));
-    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x + 30, clientY: y, pointerId: 1, pointerType: 'touch' }));
+    btn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x + 30, clientY: y, pointerId: 1, pointerType: 'touch' }));
     const swipe = window.__vibes.slice(b);
     return { tap, swipe, labelClicks: window.__labelClicks };
   });
@@ -78,10 +78,10 @@ const browser = await chromium.launch({ headless: true, executablePath: EDGE });
 
   const opened = await page.evaluate(async () => {
     document.querySelectorAll('[class*="anim-sheet-mask"]').forEach((el) => el.remove());
-    const card = document.querySelector('main button.pressable');
+    const card = [...document.querySelectorAll('main button.anim-pop.pressable')].find(b => (b.textContent || '').includes('雪菜肉丝面'));
     if (!card) return 'no-card';
     card.click();
-    await new Promise((r) => setTimeout(r, 900));
+    await new Promise((r) => setTimeout(r, 1500));
     const btn = [...document.querySelectorAll('button')].find((b) => /写评论|コメント|Write Comment/.test(b.textContent || ''));
     if (!btn) return 'no-rating-btn';
     btn.click();
@@ -136,7 +136,7 @@ const browser = await chromium.launch({ headless: true, executablePath: EDGE });
     const y = r.top + r.height / 2;
     const before = window.__labelClicks;
     btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 3, pointerType: 'touch' }));
-    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 3, pointerType: 'touch' }));
+    btn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 3, pointerType: 'touch' }));
     await new Promise((r) => setTimeout(r, 120));
     return {
       labelClicks: window.__labelClicks - before,
