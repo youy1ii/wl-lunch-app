@@ -148,8 +148,8 @@ export default function AppShell() {
     const onUp = (e: PointerEvent) => {
       // 位移超过 10px 或按住超过 600ms，都属于滑动/长按，不视为点击
       if (Math.hypot(e.clientX - downX, e.clientY - downY) > 10 || Date.now() - downT > 600) return;
-      const el = e.target as HTMLElement | null;
-      if (!el) return;
+      const el = e.target;
+      if (!(el instanceof Element)) return;
       const hit = el.closest('button, a, [role="button"], input[type="checkbox"], label');
       if (!hit) return;
       // 打分滑块区域自己处理震动，跳过以免叠加
