@@ -16,6 +16,9 @@ import {
   UserRound,
   Mail,
   UtensilsCrossed,
+  Trash2,
+  MessageCircle,
+  UserMinus,
 } from 'lucide-react';
 import { cn, isOwnerUser } from '@/lib/utils';
 import CropModal from '@/components/CropModal';
@@ -35,9 +38,12 @@ const PRIVACY_ITEMS = [
 ] as const;
 
 export default function MePage() {
-  const { user, isAdmin, settings, setSettings, logout, dishes, followees, updateUserProfile, frames, myFrameId, setActiveFrame, profileHeader, setHeaderImage, feedbacks, replyFeedback, savedAccounts, switchAccount, redeemFrameCode } = useApp();
+  const { user, isAdmin, settings, setSettings, logout, dishes, followees, updateUserProfile, deleteReview, toggleFollow, frames, myFrameId, setActiveFrame, profileHeader, setHeaderImage, feedbacks, replyFeedback, savedAccounts, switchAccount, redeemFrameCode } = useApp();
   const navigate = useNavigate();
   const [showMine, setShowMine] = useState(false);
+  const [actionReview, setActionReview] = useState<{ dishId: number; reviewId: number; dishName: string } | null>(null);
+  const [confirmDelReview, setConfirmDelReview] = useState<{ dishId: number; reviewId: number } | null>(null);
+  const [actionFollow, setActionFollow] = useState<string | null>(null);
   const [toast, setToast] = useState("");
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2000); };
   const [showFollowers, setShowFollowers] = useState(false);
@@ -117,11 +123,11 @@ export default function MePage() {
           <div
             className={
               effectiveFrameId === 'gold'
-                ? 'rounded-full p-1 bg-amber-400 shadow-[0_0_12px_3px_rgba(251,191,36,0.5),0_0_24px_6px_rgba(251,191,36,0.25)]'
+                ? 'rounded-full p-1 bg-amber-400 shadow-[0_0_18px_4px_rgba(251,191,36,0.85),0_0_38px_10px_rgba(251,191,36,0.5),0_0_60px_18px_rgba(251,191,36,0.25)]'
                 : effectiveFrameId === 'rainbow'
                   ? 'rounded-full p-1 shadow-xl'
                   : effectiveFrameId === 'beta'
-                    ? 'rounded-full p-1 bg-emerald-400 shadow-[0_0_12px_3px_rgba(52,211,153,0.5),0_0_24px_6px_rgba(52,211,153,0.25)]'
+                    ? 'rounded-full p-1 bg-emerald-400 shadow-[0_0_18px_4px_rgba(52,211,153,0.95),0_0_38px_10px_rgba(52,211,153,0.6),0_0_60px_18px_rgba(52,211,153,0.3)]'
                     : 'p-1'
             }
             style={effectiveFrameId === 'rainbow' ? { background: 'conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)' } : undefined}
@@ -203,7 +209,12 @@ export default function MePage() {
             </div>
             {myReviews.length === 0 && <p className="py-8 text-center text-xs text-muted-foreground">还没打过分，去首页挑一道菜试试</p>}
             {myReviews.map(({ dish, review }) => (
-              <div key={review.id} className="mb-2 rounded-xl bg-muted p-3 text-xs">
+              <button
+                key={review.id}
+                type="button"
+                onClick={() => setActionReview({ dishId: dish.id, reviewId: review.id, dishName: dish.name })}
+                className="pressable mb-2 w-full rounded-xl bg-muted p-3 text-left text-xs"
+              >
                 <div className="flex items-center justify-between">
                   <span className="font-bold">{dish.name}</span>
                   <span
@@ -214,7 +225,7 @@ export default function MePage() {
                   </span>
                 </div>
                 <p className="mt-1 text-muted-foreground">{review.text}</p>
-              </div>
+              </button>
             ))}
           </div>
         </div>,
@@ -241,11 +252,89 @@ export default function MePage() {
               <h3 className="text-sm font-black">关注</h3>
               <button type="button" onClick={() => setShowFollowing(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
             </div>
-            {followees.length === 0 ? <p className="py-8 text-center text-xs text-muted-foreground">还没有关注任何人</p> : followees.map(u => <div key={u} className="mb-2 rounded-xl bg-muted p-3 text-xs">{u}</div>)}
+            {followees.length === 0 ? <p className="py-8 text-center text-xs text-muted-foreground">还没有关注任何人</p> : followees.map(u => (
+              <button key={u} type="button" onClick={() => setActionFollow(u)} className="pressable mb-2 flex w-full items-center gap-3 rounded-xl bg-muted p-3 text-left text-xs">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-black text-primary-foreground">{u.slice(0, 1).toUpperCase()}</span>
+                <span className="flex-1 font-bold">{u}</span>
+                <ChevronRight size={15} className="text-muted-foreground" />
+              </button>
+            ))}
           </div>
         </div>,
         document.body,
       )}
+      {/* 评价操作卡：前往菜品评论区 / 删除 */}
+      {actionReview && createPortal(
+        <div className="fixed inset-0 z-[320] flex items-end justify-center bg-black/50" onClick={() => setActionReview(null)}>
+          <div className="anim-rise w-full max-w-md rounded-t-3xl bg-card p-5 shadow-2xl" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 text-center text-sm font-black">{actionReview.dishName}</div>
+            <button
+              type="button"
+              onClick={() => { const id = actionReview.dishId; setActionReview(null); setShowMine(false); navigate(`/dishes/${id}`); }}
+              className="pressable mb-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground"
+            >
+              <MessageCircle size={17} /> 前往菜品评论区
+            </button>
+            <button
+              type="button"
+              onClick={() => { setConfirmDelReview({ dishId: actionReview.dishId, reviewId: actionReview.reviewId }); setActionReview(null); }}
+              className="pressable flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-3 text-sm font-bold text-destructive"
+            >
+              <Trash2 size={17} /> 删除评价
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {/* 删除评价二次确认 */}
+      {confirmDelReview && createPortal(
+        <div className="fixed inset-0 z-[330] flex items-center justify-center bg-black/60 p-6" onClick={() => setConfirmDelReview(null)}>
+          <div className="anim-pop card-solid w-full max-w-xs rounded-2xl p-5 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive"><Trash2 size={22} /></div>
+            <div className="text-sm font-black">{t(settings.lang, 'deleteReviewConfirm')}</div>
+            <p className="mt-1 text-[11px] text-muted-foreground">删除后不可恢复</p>
+            <div className="mt-5 flex gap-2">
+              <button type="button" onClick={() => setConfirmDelReview(null)} className="pressable flex-1 rounded-xl bg-muted py-2.5 text-sm font-bold">{t(settings.lang, 'cancel')}</button>
+              <button
+                type="button"
+                onClick={() => {
+                  const { dishId, reviewId } = confirmDelReview!;
+                  setConfirmDelReview(null);
+                  deleteReview(dishId, reviewId).then((ok) => {
+                    showToast(ok ? '评价已删除' : 'PRTS代理指挥失败。请检查网络再次尝试');
+                  });
+                }}
+                className="pressable flex-1 rounded-xl bg-destructive py-2.5 text-sm font-bold text-destruct-foreground"
+              >
+                {t(settings.lang, 'confirm')}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {/* 关注操作卡：取消关注 */}
+      {actionFollow && createPortal(
+        <div className="fixed inset-0 z-[320] flex items-end justify-center bg-black/50" onClick={() => setActionFollow(null)}>
+          <div className="anim-rise w-full max-w-md rounded-t-3xl bg-card p-5 shadow-2xl" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex flex-col items-center gap-2">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-black text-primary-foreground">{actionFollow.slice(0, 1).toUpperCase()}</span>
+              <span className="text-sm font-black">{actionFollow}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => { const name = actionFollow; setActionFollow(null); toggleFollow(name); showToast('已取消关注 ' + name); }}
+              className="pressable flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-3 text-sm font-bold text-destructive"
+            >
+              <UserMinus size={17} /> 取消关注
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
+
       {/* 编辑资料 / 隐私设置 */}
       <div className="card-solid mt-5 overflow-hidden rounded-2xl shadow-sm">
         <button

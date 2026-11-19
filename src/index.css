@@ -73,11 +73,12 @@ body {
     align-items: center;
     justify-content: center;
   }
+  /* 两侧不再是黑条：跟随主题背景色，波点无限延伸到整屏 */
   body {
-    background: radial-gradient(circle at 50% -10%, #4a4436 0%, #2a2620 42%, #15130f 100%) !important;
-  }
-  html.theme-light body {
-    background: radial-gradient(circle at 50% -10%, #fffaf0 0%, #f6ead0 48%, #e6d5ac 100%) !important;
+    background-color: var(--background) !important;
+    background-image: radial-gradient(color-mix(in oklab, var(--foreground) 14%, transparent) 1.2px, transparent 1.3px) !important;
+    background-size: 14px 14px !important;
+    background-attachment: fixed !important;
   }
   .app-frame {
     width: 100% !important;
@@ -88,26 +89,30 @@ body {
     box-shadow:
       0 40px 120px -24px rgba(0, 0, 0, 0.75),
       0 0 0 1px rgba(255, 255, 255, 0.07),
-      0 0 0 9px rgba(255, 255, 255, 0.035) !important;
+      0 0 0 9px rgba(255, 255, 255, 0.035),
+      0 0 90px 14px color-mix(in oklab, var(--primary, #E8B923) 26%, transparent),
+      0 0 160px 40px color-mix(in oklab, var(--primary, #E8B923) 14%, transparent) !important;
     overflow: hidden !important;
   }
   .wx-notif { top: 24px !important; }
 }
 
-/* 金色泛光（收敛，不晃眼） */
+/* 金色泛光 */
 .glow-gold {
   box-shadow:
     0 0 0 3px #E8B923,
-    0 0 12px rgba(232, 185, 35, 0.8),
-    0 0 24px rgba(232, 185, 35, 0.4);
+    0 0 18px rgba(232, 185, 35, 0.85),
+    0 0 38px rgba(232, 185, 35, 0.5),
+    0 0 60px rgba(232, 185, 35, 0.25);
 }
 
 /* 薄荷绿泛光（总管理员） */
 .glow-mint {
   box-shadow:
     0 0 0 3px #34D399,
-    0 0 12px rgba(52, 211, 153, 0.9),
-    0 0 24px rgba(52, 211, 153, 0.5);
+    0 0 18px rgba(52, 211, 153, 0.95),
+    0 0 38px rgba(52, 211, 153, 0.6),
+    0 0 60px rgba(52, 211, 153, 0.3);
 }
 
 /* 细滚动条 */

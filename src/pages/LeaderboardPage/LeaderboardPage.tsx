@@ -138,7 +138,7 @@ export default function LeaderboardPage() {
                               className="rounded-full px-2 py-0.5 font-bold ring-1"
                               style={{ background: TIERS[5 - myRatings[dish.id]].color + '22', color: TIERS[5 - myRatings[dish.id]].color }}
                             >
-                              我评{myRatings[dish.id]}
+                              评{myRatings[dish.id]}
                             </span>
                           )}
                         </div>
@@ -170,7 +170,7 @@ export default function LeaderboardPage() {
                       className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold"
                       style={{ background: TIERS[5 - myRatings[dish.id]].color + '22', color: TIERS[5 - myRatings[dish.id]].color }}
                     >
-                      我{myRatings[dish.id]}
+                      {myRatings[dish.id]}
                     </span>
                   )}
                   <span className="text-sm font-black" style={{ color: tier.color }}>
