@@ -84,6 +84,23 @@ export default function AppShell() {
     }
   }, [settings.bgColor]);
 
+  // 强调色同步到根元素：写评论浮动按钮、打分 Sheet、确认弹窗、回到顶部等弹层都是
+  // createPortal 挂到 document.body 的，不在 .app-frame 内，继承不到容器上的 --primary，
+  // 会退回 tailwind-theme.css 的默认黄。写到 documentElement 后 portal 层也能跟随自定义强调色。
+  useEffect(() => {
+    const root = document.documentElement;
+    if (settings.accent) {
+      root.style.setProperty('--primary', settings.accent);
+      root.style.setProperty('--ring', settings.accent);
+    } else {
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--ring');
+    }
+    const secondary = settings.accent2 || settings.accent;
+    if (secondary) root.style.setProperty('--color-primary-2', secondary);
+    else root.style.removeProperty('--color-primary-2');
+  }, [settings.accent, settings.accent2]);
+
   // 语言切换 → 全套 UI 字体跟随（含 portal 弹层，因为它们挂在 body 上继承 --font-sans）
   useEffect(() => {
     const lang: Lang = settings.lang ?? 'zh';
