@@ -472,6 +472,21 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
   // 资料由本函数刷新，setUser 里用 same 短路避免 username/role 变化触发的回环
   }, [user?.uid, user?.username, user?.role, isAdmin, buildDishes]);
 
+  // 轻量同步点赞：只拉 rating_likes 一张表，局部更新各评论的 likes/liked。
+  // 供 realtime 使用，避免任何一次点赞都全量 loadAll（12 张表）造成延迟与状态回滚。
+  const refreshLikes = useCallback(async () => {
+    const { data } = await supabase.from('rating_likes').select('*');
+    if (!data) return;
+    const uid = user?.uid;
+    setDishes((prev) => prev.map((d) => ({
+      ...d,
+      reviews: d.reviews.map((r) => {
+        const ls = (data as any[]).filter((p) => String(p.rating_id) === String(r.id));
+        return { ...r, likes: ls.length, liked: uid ? ls.some((p) => p.user_uid === uid) : false };
+      }),
+    })));
+  }, [user?.uid]);
+
   /* ---------------- 写入助手 ---------------- */
   const notify = useCallback(async (
     targets: string[], nkind: INotification['kind'], text: string,
@@ -481,9 +496,9 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     const { error } = await supabase.from('notifications').insert(list.map((t) => ({
       target_uid: t, kind: nkind, text, read: false,
     })));
-    if (!error) loadAll();
+    // 通知落库即返回，realtime 会同步到通知中心；不再全量 loadAll（这是多处延迟的叠加源）
     return !error;
-  }, [loadAll]);
+  }, []);
 
   const adminTargets = useCallback(async (): Promise<string[]> => {
     const { data } = await supabase.from('users').select('uid').in('role', ['teacher', 'admin']);
@@ -538,6 +553,9 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
                 } : prev);
               }
             });
+          } else if (tbl === 'rating_likes') {
+            // 点赞高频，只轻量同步点赞状态，不全量重载（避免延迟和乐观更新被回滚）
+            refreshLikes();
           } else {
             loadAll();
           }
@@ -545,7 +563,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
         .subscribe(),
     );
     return () => channels.forEach((c) => supabase.removeChannel(c));
-  }, [loadAll, user?.uid]);
+  }, [loadAll, refreshLikes, user?.uid]);
 
   // 启动时刷新当前用户资料
   useEffect(() => {
@@ -571,37 +589,62 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
   }, [user, loadAll]);
 
   const toggleLike = useCallback((dishId: number, reviewId: number) => {
+    // 先从当前渲染状态读出这条评论「点之前」的 liked，决定本次是点赞还是取消。
+    // 用局部变量固定方向，避免 select→写入之间被 realtime/loadAll 改动导致方向判断错乱。
+    const current = dishes.find((d) => d.id === dishId)?.reviews.find((r) => r.id === reviewId);
+    const nextLiked = !current?.liked;
+    // 乐观更新：立即反馈，不等待网络
     setDishes((prev) => prev.map((d) => d.id !== dishId ? d : {
       ...d, reviews: d.reviews.map((r) => r.id === reviewId
-        ? { ...r, liked: !r.liked, likes: r.likes + (r.liked ? -1 : 1) } : r),
+        ? { ...r, liked: nextLiked, likes: Math.max(0, r.likes + (nextLiked ? 1 : -1)) } : r),
     }));
     if (!user?.uid) return;
+    // 按方向直接写：取消则按 (rating_id,user_uid) 删除，点赞则插入。
+    // 不用 select 再判断，省一次往返；成功后不触发全量 loadAll（realtime 会同步其他端）。
     (async () => {
-      const { data } = await supabase.from('rating_likes').select('id')
-        .eq('rating_id', String(reviewId)).eq('user_uid', user.uid!);
-      if (data && data.length > 0) await supabase.from('rating_likes').delete().eq('id', data[0].id);
-      else await supabase.from('rating_likes').insert({ rating_id: String(reviewId), user_uid: user.uid! });
-      loadAll();
+      if (nextLiked) {
+        const { error } = await supabase.from('rating_likes').insert({ rating_id: String(reviewId), user_uid: user.uid! });
+        if (error) {
+          // 写入失败：回滚乐观更新
+          setDishes((prev) => prev.map((d) => d.id !== dishId ? d : {
+            ...d, reviews: d.reviews.map((r) => r.id === reviewId
+              ? { ...r, liked: !nextLiked, likes: Math.max(0, r.likes + (nextLiked ? -1 : 1)) } : r),
+          }));
+        }
+      } else {
+        await supabase.from('rating_likes').delete()
+          .eq('rating_id', String(reviewId)).eq('user_uid', user.uid!);
+      }
     })();
-  }, [user, loadAll]);
+  }, [user, dishes]);
 
   const updateReview = useCallback((dishId: number, reviewId: number, newText: string) => {
     setDishes((prev) => prev.map((d) => d.id !== dishId ? d : {
       ...d, reviews: d.reviews.map((r) => r.id === reviewId ? { ...r, text: newText } : r),
     }));
-    supabase.from('ratings').update({ text: newText }).eq('id', reviewId).then(() => loadAll());
+    // 乐观更新已生效，落库后靠 realtime 兜底同步，不再全量 loadAll。失败才回滚。
+    supabase.from('ratings').update({ text: newText }).eq('id', reviewId).then(({ error }) => { if (error) loadAll(); });
   }, [loadAll]);
 
-  const deleteReview = useCallback((dishId: number, reviewId: number): Promise<boolean> =>
-    Promise.resolve((async () => {
-      const { data } = await supabase.from('ratings').select('user_uid').eq('id', reviewId).maybeSingle();
-      const authorUid = data?.user_uid as string | undefined;
+  const deleteReview = useCallback((dishId: number, reviewId: number): Promise<boolean> => {
+    // 立即从本地移除，UI 秒回；失败则靠 realtime/loadAll 恢复。
+    let removed: any;
+    setDishes((prev) => prev.map((d) => {
+      if (d.id !== dishId) return d;
+      removed = d.reviews.find((r) => r.id === reviewId);
+      return { ...d, reviews: d.reviews.filter((r) => r.id !== reviewId) };
+    }));
+    (async () => {
+      const authorUid = removed?.authorUid as string | undefined;
       const { error } = await supabase.from('ratings').delete().eq('id', reviewId);
-      if (error) return false;
-      loadAll();
-      if (authorUid && authorUid !== user?.uid) await notify([authorUid], 'admin', '你的某条评价已被管理员删除');
-      return true;
-    })()), [loadAll, notify, user?.uid]);
+      if (error) { loadAll(); return; }
+      if (authorUid && authorUid !== user?.uid) {
+        await notify([authorUid], 'admin', '你的某条评价已被管理员删除');
+      }
+      // 依赖 realtime 同步其他端，不再全量 loadAll
+    })();
+    return Promise.resolve(true);
+  }, [loadAll, notify, user?.uid]);
 
   const replyReview = useCallback((dishId: number, reviewId: number, text: string) => {
     setDishes((prev) => prev.map((d) => d.id !== dishId ? d : {
@@ -609,15 +652,19 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
         ? { ...r, replies: [...r.replies, { id: Date.now(), author: user?.username || '我', text }] } : r),
     }));
     (async () => {
-      await supabase.from('rating_replies').insert({
-        rating_id: String(reviewId), author_uid: user?.uid || '',
-        author_name: user?.username || '我', text,
-      });
-      const { data } = await supabase.from('ratings').select('user_uid').eq('id', reviewId).maybeSingle();
-      if (data?.user_uid && data.user_uid !== user?.uid) {
-        await notify([data.user_uid], 'reply', `你的评价收到了新回复：${text.slice(0, 40)}`);
+      // 落库与「查作者uid」并行发起，通知紧跟其后；依赖 realtime 兜底，不再串行 await + 全量 loadAll
+      const [insertRes, authorRes] = await Promise.all([
+        supabase.from('rating_replies').insert({
+          rating_id: String(reviewId), author_uid: user?.uid || '',
+          author_name: user?.username || '我', text,
+        }),
+        supabase.from('ratings').select('user_uid').eq('id', reviewId).maybeSingle(),
+      ]);
+      if (insertRes.error) { loadAll(); return; }
+      const authorUid = (authorRes.data as any)?.user_uid;
+      if (authorUid && authorUid !== user?.uid) {
+        await notify([authorUid], 'reply', `你的评价收到了新回复：${text.slice(0, 40)}`);
       }
-      loadAll();
     })();
   }, [user, notify, loadAll]);
 
@@ -630,10 +677,10 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
       author_real_name: user?.realName || '', kind, text, anonymous, status: 'pending',
     });
     if (error) return false;
-    await notify(await adminTargets(), 'admin', `📬 收到一条新${kind === 'complain' ? '投诉' : '建议'}：${text.slice(0, 30)}`);
-    loadAll();
+    // 通知后台发，不阻塞提交成功；反馈列表靠 realtime 兜底同步，不再全量 loadAll
+    notify(await adminTargets(), 'admin', `📬 收到一条新${kind === 'complain' ? '投诉' : '建议'}：${text.slice(0, 30)}`);
     return true;
-  })()), [user, notify, adminTargets, loadAll]);
+  })()), [user, notify, adminTargets]);
 
   const replyFeedback = useCallback((id: number, reply: string): Promise<boolean> => {
     // 乐观更新：立即在本地标记已回复，UI 秒回，不再串行等网络（原来 select→update→notify→loadAll 要 ~5s）。
@@ -653,7 +700,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
       if (!target.anonymous && target.authorUid) {
         await notify([target.authorUid], 'feedback', `你的反馈已收到管理员「${adminRep}」的回复：${reply.slice(0, 40)}`);
       }
-      loadAll();
+      // 乐观更新已生效，realtime 兜底同步，不再全量 loadAll
     })();
     return Promise.resolve(true);
   }, [user, notify, loadAll, feedbacks]);

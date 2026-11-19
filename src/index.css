@@ -145,10 +145,12 @@ body {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
 }
+/* 通知从顶部滑入：水平居中交给 Tailwind 的 left-1/2 + -translate-x-1/2，
+   动画只做垂直位移和缩放，不能在 transform 里再写 translateX(-50%)，否则双重偏移导致错位偏左。 */
 @keyframes wx-drop-in {
-  0% { opacity: 0; transform: translate(-50%, -120%) scale(0.9); }
-  60% { opacity: 1; transform: translate(-50%, 8px) scale(1.02); }
-  100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  0% { opacity: 0; transform: translateY(-120%) scale(0.9); }
+  60% { opacity: 1; transform: translateY(8px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .anim-rise { animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }

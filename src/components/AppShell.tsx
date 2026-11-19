@@ -216,9 +216,12 @@ export default function AppShell() {
     };
     const onTouch = (e: TouchEvent) => {
       if (e.touches.length === 0) return;
-      setSettling(false);
+      // 触摸只做垂直视差，横向(x)恒为 0：手指上下滑动评论区时的微小左右抖动
+      // 会被放大成背景光晕的横向位移，造成"整个卡片左右晃/乱飞"。桌面鼠标视差不受影响。
       const t = e.touches[0];
-      setParallax({ x: (t.clientX / window.innerWidth - 0.5) * 16, y: (t.clientY / window.innerHeight - 0.5) * 16 });
+      const y = (t.clientY / window.innerHeight - 0.5) * 16;
+      // 变化小于阈值就跳过，避免每帧 setState 造成滑动卡顿
+      setParallax((prev) => (prev.x === 0 && Math.abs(prev.y - y) < 1 ? prev : { x: 0, y }));
     };
     window.addEventListener('mousemove', onMove);
     document.addEventListener('mouseleave', settle);
