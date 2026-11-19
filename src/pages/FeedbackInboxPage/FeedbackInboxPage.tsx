@@ -65,7 +65,7 @@ export default function FeedbackInboxPage() {
       if (!c) {
         c = {
           key,
-          name: f.anonymous ? t(lang, 'anonymous') : (f.authorRealName || f.author || '同学'),
+          name: f.anonymous ? t(lang, 'anonymous') : (f.authorRealName || f.author || t(lang,'同学')),
           uid: f.authorUid,
           realName: f.authorRealName,
           anonymous: f.anonymous,
@@ -112,7 +112,7 @@ export default function FeedbackInboxPage() {
         setReplyTarget(null);
         toast.success(t(lang, 'reply') + ' ✓');
       } else {
-        toast.error('PRTS代理指挥失败。请检查网络再次尝试');
+        toast.error(t(lang,'PRTS代理指挥失败。请检查网络再次尝试'));
       }
     });
   };
@@ -175,8 +175,8 @@ export default function FeedbackInboxPage() {
                     <div className="max-w-[75%]">
                       <div className="mb-0.5 flex items-center justify-end gap-1.5 text-xs text-muted-foreground">
                         {f.repliedAt && <span>{fmtTime(f.repliedAt)}</span>}
-                        <span className="font-bold" style={{ color: isOwnerMark(f.adminRep) ? 'var(--primary)' : undefined }}>{user?.nickname || f.adminRep || '管理员'}</span>
-                        {isOwnerMark(f.adminRep) && <span className="rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-black text-white">总管理员</span>}
+                        <span className="font-bold" style={{ color: isOwnerMark(f.adminRep) ? 'var(--primary)' : undefined }}>{user?.nickname || f.adminRep || t(lang,'管理员')}</span>
+                        {isOwnerMark(f.adminRep) && <span className="rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-black text-white">{t(lang,'总管理员')}</span>}
                       </div>
                       <div className="rounded-2xl rounded-tr-sm bg-primary px-3 py-2 text-left text-sm text-primary-foreground shadow-sm">
                         {f.reply}
