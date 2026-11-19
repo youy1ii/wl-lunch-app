@@ -72,6 +72,7 @@ export interface AppStoreValue {
   hideBottomNav: boolean;
   setHideBottomNav: (v: boolean) => void;
   notifyGroup: (text: string, excludeUid?: string) => Promise<boolean>;
+  getProfile: (uid?: string) => IUser | undefined;
 }
 
 export const AppStore = createContext<AppStoreValue | null>(null);

@@ -15,7 +15,7 @@ const PREVIEW_REPLIES = 2;
 export default function DishDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { dishes, settings, addReview, toggleLike, deleteReview, replyReview, user, isAdmin, sendAdminMessage, banUser, myRatings, followees, toggleFollow } = useApp();
+  const { dishes, settings, addReview, toggleLike, deleteReview, replyReview, user, isAdmin, sendAdminMessage, banUser, myRatings, followees, toggleFollow, getProfile } = useApp();
   const isOwner = user?.uid === "00000000";
   const dish = dishes.find((d) => d.id === Number(id));
   const [showDist, setShowDist] = useState(false);
@@ -31,6 +31,7 @@ export default function DishDetailPage() {
   const [commentTab, setCommentTab] = useState<'all' | 'hot' | 'follow'>('hot');
   const [scrolled, setScrolled] = useState(0);
   const [profileCard, setProfileCard] = useState<string | null>(null);
+  const [profileCardUid, setProfileCardUid] = useState<string | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   if (!dish) {
@@ -179,6 +180,11 @@ export default function DishDetailPage() {
               const expanded = expandedIds.includes(r.id);
               const preview = r.replies.slice(0, PREVIEW_REPLIES);
               const rest = r.replies.slice(PREVIEW_REPLIES);
+              // 头像/昵称按 uid 取服务端最新资料，改资料后所有设备的评论区同步更新
+              const prof = getProfile(r.authorUid);
+              const displayName = prof?.nickname || r.author;
+              const displayAvatar = prof?.avatar || '';
+              const avatarIsImg = displayAvatar.startsWith('data:') || displayAvatar.startsWith('http');
               return (
                 <div
                   key={r.id}
@@ -191,8 +197,10 @@ export default function DishDetailPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <button type="button" onClick={() => setProfileCard(r.author)} className={"pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-black ring-2 " + (r.author === "WLLC2026" ? "bg-emerald-500 text-white ring-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.4)]" : "bg-primary/20 text-primary ring-transparent")}>
-                        {r.author.slice(0, 1).toUpperCase()}
+                      <button type="button" onClick={() => { setProfileCard(r.author); setProfileCardUid(r.authorUid); }} className={"pressable flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full text-[11px] font-black ring-2 " + (r.authorUid === "00000000" ? "bg-emerald-500 text-white ring-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.4)]" : "bg-primary/20 text-primary ring-transparent")}>
+                        {avatarIsImg
+                          ? <img src={displayAvatar} alt="" className="h-full w-full object-cover" />
+                          : displayName.slice(0, 1).toUpperCase()}
                       </button>
                       {followees.includes(r.author) ? (
                         <button
@@ -217,10 +225,10 @@ export default function DishDetailPage() {
                           className="pressable text-xs font-bold text-primary underline decoration-dotted underline-offset-2"
                           onClick={() => { setDmTo(r.author); setDmText(''); }}
                         >
-                          {r.author}
+                          {displayName}
                         </button>
                       ) : (
-                        <span className="text-xs font-bold">{r.author}{((r.author === "admin" || r.author === "管理员" || r.mine) && isAdmin) && <span className={"ml-1 rounded-full px-1.5 py-0.5 text-[9px] text-white " + (isOwner ? "bg-emerald-400" : "bg-primary")}>{isOwner ? "总管理员" : "管理员"}</span>}</span>
+                        <span className="text-xs font-bold">{displayName}{((r.authorUid === "00000000" || r.author === "admin" || r.author === "管理员" || r.mine) && isAdmin) && <span className={"ml-1 rounded-full px-1.5 py-0.5 text-[9px] text-white " + (r.authorUid === "00000000" ? "bg-emerald-400" : "bg-primary")}>{r.authorUid === "00000000" ? "总管理员" : "管理员"}</span>}</span>
                       )}
                     </div>
                     <span
@@ -446,12 +454,17 @@ export default function DishDetailPage() {
           <div className="anim-rise w-full max-w-xs rounded-2xl border border-border bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col items-center">
               <div className={
-                "flex h-16 w-16 items-center justify-center rounded-full text-2xl font-black " +
-                (profileCard === "WLLC2026" ? "ring-4 ring-emerald-400 shadow-emerald-300/60 shadow-lg bg-emerald-400 text-white" : "bg-primary/20 text-primary")
-              }>{profileCard.slice(0,1).toUpperCase()}</div>
-              <h3 className="mt-2 text-sm font-black">{profileCard}</h3>
+                "flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-2xl font-black " +
+                (profileCardUid === "00000000" ? "ring-4 ring-emerald-400 shadow-emerald-300/60 shadow-lg bg-emerald-400 text-white" : "bg-primary/20 text-primary")
+              }>{(() => {
+                const av = getProfile(profileCardUid)?.avatar || '';
+                return (av.startsWith('data:') || av.startsWith('http'))
+                  ? <img src={av} alt="" className="h-full w-full object-cover" />
+                  : (getProfile(profileCardUid)?.nickname || profileCard).slice(0, 1).toUpperCase();
+              })()}</div>
+              <h3 className="mt-2 text-sm font-black">{getProfile(profileCardUid)?.nickname || profileCard}</h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {profileCard === "WLLC2026" ? "总管理员" : "同学"}
+                {profileCardUid === "00000000" ? "总管理员" : "同学"}
               </p>
               <div className="mt-3 flex gap-6 text-center">
                 <div>

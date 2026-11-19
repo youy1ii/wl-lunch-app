@@ -153,6 +153,13 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     });
   }, []);
   const [notifications, setNotifications] = useState<INotification[]>([]);
+  // 按 uid 索引的最新用户资料（昵称/头像/签名），供评论区与跨设备同步使用
+  const [userProfiles, setUserProfiles] = useState<Record<string, IUser>>({});
+  const getProfile = useCallback((uid?: string): IUser | undefined => {
+    if (!uid) return undefined;
+    if (uid === user?.uid && user) return user; // 自己的资料直接用实时 state
+    return userProfiles[uid];
+  }, [user, userProfiles]);
 
   const setSettings = useCallback((patch: Partial<ISettings>) => {
     setSettingsState((prev) => {
@@ -303,7 +310,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     );
 
     const [busRes, dishRes, ratingRes, fbRes, notifRes, annRes, bannerRes,
-      followRes, likeRes, replyRes, frameRes] = await Promise.all([
+      followRes, likeRes, replyRes, frameRes, usersRes] = await Promise.all([
       supabase.from(BUS).select('*'),
       supabase.from('dishes').select('*'),
       supabase.from('ratings').select('*'),
@@ -315,6 +322,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
       supabase.from('rating_likes').select('*'),
       supabase.from('rating_replies').select('*').order('id', { ascending: true }),
       supabase.from('avatar_frames').select('*').order('id', { ascending: true }),
+      supabase.from('users').select('*'),
     ]);
 
     const busRows = ((busRes.data || []) as BusRow[]);
@@ -416,15 +424,52 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
       const p = jparse(tipsRow.text);
       setTipsQrState(typeof p.qr === 'string' && p.qr ? p.qr : null);
     }
+    // 每个用户的 app_pref 偏好（昵称存这里，users 表无 nickname 列）
+    const prefByUid: Record<string, any> = {};
+    byKind(K.PREF).forEach((r) => { if (r.author_uid) prefByUid[r.author_uid] = jparse(r.text); });
+    // 构建 uid → 最新资料映射：users 表提供账号名/真名/头像/签名，app_pref 提供昵称
+    const profiles: Record<string, IUser> = {};
+    if (!usersRes.error) {
+      (usersRes.data || []).forEach((row: any) => {
+        const pref = prefByUid[row.uid] || {};
+        profiles[row.uid] = {
+          uid: row.uid, username: row.username || '', realName: row.real_name || row.username || '',
+          role: row.role || 'student', studentId: row.student_id, klass: row.klass, grade: row.grade,
+          bio: row.bio || '', avatar: row.avatar || '',
+          nickname: typeof pref.nickname === 'string' ? pref.nickname : (row.real_name || row.username || ''),
+          showRealInfo: !!row.show_real_info,
+        } as IUser;
+      });
+    }
+    setUserProfiles(profiles);
+
     const prefRow = uid ? byKind(K.PREF).find((r) => r.author_uid === uid) : undefined;
     if (prefRow) {
       const p = jparse(prefRow.text);
       setMyFrameId(p.myFrameId || ''); setProfileHeader(p.profileHeader || '');
-      // 昵称存于 app_pref（users 表无 nickname 列）：跨设备同步网名。
-      if (typeof p.nickname === 'string') {
-        setUser((prev) => prev && prev.nickname !== p.nickname ? { ...prev, nickname: p.nickname } : prev);
-      }
     }
+    // 以服务端资料为准刷新当前用户（跨设备昵称/签名/头像同步）：
+    // users 表无 nickname 列，昵称只能取自 app_pref；没有偏好记录时回退服务端真名/账号名。
+    if (uid && profiles[uid]) {
+      const latest = profiles[uid];
+      setUser((prev) => {
+        if (!prev) return prev;
+        const next: IUser = {
+          ...prev,
+          username: latest.username || prev.username,
+          realName: latest.realName || prev.realName,
+          bio: latest.bio,
+          avatar: latest.avatar,
+          nickname: prefByUid[uid] && typeof prefByUid[uid].nickname === 'string'
+            ? prefByUid[uid].nickname : (latest.realName || latest.username || prev.nickname),
+        };
+        // 无实质变化则不更新，避免不必要的重渲染/realtime 回环
+        const same = next.username === prev.username && next.realName === prev.realName
+          && next.bio === prev.bio && next.avatar === prev.avatar && next.nickname === prev.nickname;
+        return same ? prev : next;
+      });
+    }
+  // 资料由本函数刷新，setUser 里用 same 短路避免 username/role 变化触发的回环
   }, [user?.uid, user?.username, user?.role, isAdmin, buildDishes]);
 
   /* ---------------- 写入助手 ---------------- */
@@ -837,7 +882,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     postAnnouncement, setBanners, setTipsQr, unreadAnnouncement, markAnnouncementRead,
     ticker, setTicker, myRatings, wants, toggleWant, notifications, markAllNotificationsRead,
     sendAdminMessage, togglePin,
-    hideBottomNav, setHideBottomNav, notifyGroup,
+    hideBottomNav, setHideBottomNav, notifyGroup, getProfile,
   };
 
   return <AppStore.Provider value={value}>{children}</AppStore.Provider>;
