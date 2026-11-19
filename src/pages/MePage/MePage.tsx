@@ -24,7 +24,7 @@ import { cn, isOwnerUser } from '@/lib/utils';
 import CropModal from '@/components/CropModal';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
-import { TIERS } from '@/lib/mock-data';
+import { TIERS, tierByScore } from '@/lib/mock-data';
 import type { Lang } from '@/lib/types';
 
 // 隐私开关项：草稿态与保存共用同一份定义
@@ -220,9 +220,9 @@ export default function MePage() {
                   <span className="font-bold">{dish.name}</span>
                   <span
                     className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-                    style={{ background: TIERS[review.tier - 1].color }}
+                    style={{ background: tierByScore(review.tier).color }}
                   >
-                    {TIERS[review.tier - 1].label}
+                    {tierByScore(review.tier).label}
                   </span>
                 </div>
                 <p className="mt-1 text-muted-foreground">{review.text}</p>

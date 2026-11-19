@@ -10,6 +10,16 @@ import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import AdminGroupChat from '@/components/AdminGroupChat';
 
+// 通知时间是数据库 ISO 原文（如 2026-11-19T15:12:15.016632+00:00），
+// 直接显示会撑破窄下拉面板。统一压成「11-19 15:12」短格式。
+function shortTime(iso: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 16);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 const PODIUM = [
   { rank: 1, color: '#F5C518', barH: 'h-28' },
   { rank: 2, color: '#C0C7D1', barH: 'h-20' },
@@ -175,7 +185,7 @@ export default function HomePage() {
 
       {/* 通知下拉：三类分组 */}
       {showNotif && (
-        <div className="anim-pop absolute right-4 top-16 z-40 w-72 rounded-xl p-2 shadow-xl ring-1 ring-black/10" style={{ background: 'var(--card)' }}>
+        <div className="anim-pop absolute right-4 top-16 z-40 w-72 max-w-[calc(100vw-2rem)] rounded-xl p-2 shadow-xl ring-1 ring-black/10" style={{ background: 'var(--card)' }}>
           {notifications.length === 0 && (
             <div className="py-6 text-center text-xs text-muted-foreground">暂无通知</div>
           )}
@@ -197,8 +207,8 @@ export default function HomePage() {
                 </div>
                 {list.map((n) => (
                   <div key={n.id} className="pressable rounded-b-lg px-2 py-2 text-xs leading-relaxed hover:bg-muted" onClick={() => { if (n.kind === 'feedback') { setEmailDetail(n); markAllNotificationsRead(); } }}>
-                    <div className="text-muted-foreground">{n.time}</div>
-                    <div className="mt-0.5">{n.text}</div>
+                    <div className="text-muted-foreground">{shortTime(n.time)}</div>
+                    <div className="mt-0.5 break-words">{n.text}</div>
                   </div>
                 ))}
               </div>

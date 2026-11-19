@@ -217,7 +217,7 @@ export default function AppShell() {
   return (
     <div
       className={cn(
-        'dots-bg app-frame relative mx-auto flex h-full w-full max-w-md flex-col overflow-hidden',
+        'dots-bg app-frame relative isolate mx-auto flex h-full w-full max-w-md flex-col overflow-hidden',
         settings.frosted && 'frosted-on',
 
         (settings.theme ?? 'dark') === 'dark' && 'theme-dark',
@@ -255,7 +255,7 @@ export default function AppShell() {
           className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
         >
           <div
-            className="absolute -top-20 -right-20 h-64 w-64 rounded-full opacity-30 blur-3xl"
+            className="absolute -top-14 -right-14 h-56 w-56 rounded-full opacity-40 blur-3xl max-md:opacity-45"
             style={{
               background: `radial-gradient(circle, ${settings.accent || '#E8B923'}, transparent 70%)`,
               transform: `translate(${parallax.x * 2}px, ${parallax.y * 2}px)`,
@@ -263,7 +263,7 @@ export default function AppShell() {
             }}
           />
           <div
-            className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full opacity-20 blur-3xl"
+            className="absolute -bottom-14 -left-14 h-56 w-56 rounded-full opacity-25 blur-3xl max-md:opacity-30"
             style={{
               background: 'radial-gradient(circle, #fff, transparent 70%)',
               transform: `translate(${-parallax.x * 2}px, ${-parallax.y * 2}px)`,

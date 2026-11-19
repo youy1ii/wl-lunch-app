@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ChevronLeft, Heart, ChevronDown, Send, ShieldBan, CalendarDays } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
-import { avgOf, tierOf, tierLabel, votesOf, TIERS } from '@/lib/mock-data';
+import { avgOf, tierOf, tierLabel, tierByScore, votesOf, TIERS } from '@/lib/mock-data';
 import { t } from '@/lib/i18n';
 import RatingSlider from '@/components/RatingSlider';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -125,9 +125,9 @@ export default function DishDetailPage() {
             {myRatings[dish.id] && (
               <div
                 className="mt-2 rounded-full px-3 py-1 text-xs font-black text-white"
-                style={{ background: TIERS[5 - myRatings[dish.id]].color }}
+                style={{ background: tierByScore(myRatings[dish.id]).color }}
               >
-                我评了 {myRatings[dish.id]} 分 · {tierLabel(myRatings[dish.id], settings.lang)}
+                我评了 {myRatings[dish.id]} 分 · {tierLabel(tierByScore(myRatings[dish.id]).score, settings.lang)}
               </div>
             )}
 
@@ -237,9 +237,9 @@ export default function DishDetailPage() {
                     </div>
                     <span
                       className="anim-pop rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-                      style={{ background: TIERS[5 - r.tier].color }}
+                      style={{ background: tierByScore(r.tier).color }}
                     >
-                      {tierLabel(r.tier, settings.lang)}
+                      {tierLabel(tierByScore(r.tier).score, settings.lang)}
                     </span>
                   </div>
                   <p className="mt-1.5 text-sm leading-relaxed">{r.text}</p>
@@ -421,7 +421,11 @@ export default function DishDetailPage() {
       )}
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="mx-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-t-2xl p-0">
+        <SheetContent
+          side="bottom"
+          onOpenAutoFocus={(e) => { e.preventDefault(); (e.currentTarget as HTMLElement).focus?.(); }}
+          className="mx-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-t-2xl p-0"
+        >
           {/* 可滚动区：小屏上也能完整滑到内容，发送按钮固定在底部不被遮挡 */}
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2 pt-4">
             <div className="mb-3 text-center text-sm font-black">{t(settings.lang, 'ratingTitle')} · {dish.name}</div>

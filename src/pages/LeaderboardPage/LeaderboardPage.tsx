@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
-import { avgOf, tierOf, tierLabel, votesOf, WINDOWS, TIERS } from '@/lib/mock-data';
+import { avgOf, tierOf, tierLabel, tierByScore, votesOf, WINDOWS, TIERS } from '@/lib/mock-data';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { WindowId } from '@/lib/types';
@@ -136,7 +136,7 @@ export default function LeaderboardPage() {
                           {myRatings[dish.id] && (
                             <span
                               className="rounded-full px-2 py-0.5 font-bold ring-1"
-                              style={{ background: TIERS[5 - myRatings[dish.id]].color + '22', color: TIERS[5 - myRatings[dish.id]].color }}
+                              style={{ background: tierByScore(myRatings[dish.id]).color + '22', color: tierByScore(myRatings[dish.id]).color }}
                             >
                               评{myRatings[dish.id]}
                             </span>
@@ -168,7 +168,7 @@ export default function LeaderboardPage() {
                   {myRatings[dish.id] && (
                     <span
                       className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold"
-                      style={{ background: TIERS[5 - myRatings[dish.id]].color + '22', color: TIERS[5 - myRatings[dish.id]].color }}
+                      style={{ background: tierByScore(myRatings[dish.id]).color + '22', color: tierByScore(myRatings[dish.id]).color }}
                     >
                       {myRatings[dish.id]}
                     </span>

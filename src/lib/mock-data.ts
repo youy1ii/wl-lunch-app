@@ -57,6 +57,23 @@ export function tierOf(avg: number): ITier {
   return TIERS[tierIndexOf(avg)];
 }
 
+// 按单个评分(可为一位小数)反查所属档位对象。替代旧的 TIERS[5 - score] 写法：
+// 旧写法在 score 是小数时索引会变成小数(如 5-3.1=1.9)取到 undefined 而崩溃。
+// 档位边界与 RatingSlider 保持一致（tierIndexOf 的阈值）。
+export function tierByScore(score: number): ITier {
+  return TIERS[tierIndexOf(score)];
+}
+
+// ratings.tier 在 Supabase 是 integer 列，无法直接存小数。用 ×10 编码入库：
+// 3.1→31、4→40、5→50；读取时再 ÷10 还原。旧数据本就是 1~5 的整数，用 >5 判断即可
+// 兼容：库里 1~5 是历史整数分，10~50 是新的编码分。
+export function encodeTier(score: number): number {
+  return Math.round(score * 10);
+}
+export function decodeTier(stored: number): number {
+  return stored > 5 ? Math.round(stored) / 10 : stored;
+}
+
 // 按界面语言取段位标签（score 5→1 对应 tier5→tier1）
 export function tierLabel(score: number, lang: Lang): string {
   return t(lang, `tier${score}`);

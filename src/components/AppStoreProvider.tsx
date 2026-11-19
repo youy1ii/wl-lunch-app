@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppStore, type AppStoreValue } from '@/lib/store-context';
-import { MOCK_ANNOUNCEMENTS, MOCK_BANNERS } from '@/lib/mock-data';
+import { MOCK_ANNOUNCEMENTS, MOCK_BANNERS, encodeTier, decodeTier } from '@/lib/mock-data';
 import { supabase } from '@/lib/supabase';
 import type {
   IBanner,
@@ -257,10 +257,12 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
       ratingRows.forEach((r: any) => {
         if (r.dish_id !== d.id) return;
         if (r.created_at && (!earliest || r.created_at < earliest)) earliest = r.created_at;
-        counts[r.tier - 1] = (counts[r.tier - 1] || 0) + 1;
+        const score = decodeTier(r.tier); // 库里 integer：>5 是 ×10 编码的小数分，1~5 是历史整数分
+        const bucket = Math.max(0, Math.min(4, Math.round(score) - 1)); // 分布统计按最近整数档归档
+        counts[bucket] = (counts[bucket] || 0) + 1;
         if (r.text && r.text.trim()) {
           reviews.push({
-            id: r.id, author: r.author_name || '同学', tier: r.tier, text: r.text,
+            id: r.id, author: r.author_name || '同学', tier: score, text: r.text,
             likes: 0, liked: false, replies: [],
             mine: meUid ? r.user_uid === meUid : false,
             authorUid: r.user_uid || undefined, createdAt: r.created_at,
@@ -327,7 +329,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     // 数据库有多少就显示多少，删空后就是真空状态（不再用假数据填充）
     setDishes(buildDishes(dishRows, ratingRows, uid, likeRes.data || [], replyRes.data || [], launchMap));
     const mine: Record<number, number> = {};
-    if (uid) ratingRows.forEach((r: any) => { if (r.user_uid === uid) mine[r.dish_id] = r.tier; });
+    if (uid) ratingRows.forEach((r: any) => { if (r.user_uid === uid) mine[r.dish_id] = decodeTier(r.tier); });
     setMyRatings(mine);
 
     // 反馈：先本地过滤掉过期的已处理反馈（界面立即不显示），再按节流清理数据库
@@ -506,7 +508,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
   const addReview = useCallback((dishId: number, tier: number, text: string): Promise<boolean> => {
     if (!user?.uid) return Promise.resolve(false);
     return Promise.resolve(supabase.from('ratings').insert({
-      dish_id: dishId, user_uid: user.uid, tier, text: text.trim(), author_name: user.username,
+      dish_id: dishId, user_uid: user.uid, tier: encodeTier(tier), text: text.trim(), author_name: user.username,
     }).then(({ error }) => { if (!error) loadAll(); return !error; }));
   }, [user, loadAll]);
 

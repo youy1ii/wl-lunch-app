@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Leaf } from 'lucide-react';
 import { useApp } from '@/lib/store-context';
-import { avgOf, tierOf, votesOf, WINDOWS, TIERS } from '@/lib/mock-data';
+import { avgOf, tierOf, tierByScore, votesOf, WINDOWS, TIERS } from '@/lib/mock-data';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { WindowId } from '@/lib/types';
@@ -145,9 +145,9 @@ export default function DishesPage() {
                   {myRatings[d.id] && (
                     <span
                       className="flex h-5 items-center rounded-full bg-white/90 px-1.5 text-[9px] font-black"
-                      style={{ color: TIERS[5 - myRatings[d.id]].color }}
+                      style={{ color: tierByScore(myRatings[d.id]).color }}
                     >
-                      我·{TIERS[5 - myRatings[d.id]].label}
+                      我·{tierByScore(myRatings[d.id]).label}
                     </span>
                   )}
                   {d.veggie && (

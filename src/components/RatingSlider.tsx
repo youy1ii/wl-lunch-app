@@ -103,9 +103,13 @@ export default function RatingSlider({
     }
   };
   const onPointerUp = (e: React.PointerEvent) => {
-    const s = fromEvent(e.clientX);
-    const snapped = Math.max(1, Math.min(5, Math.round(s)));
-    onChange(snapped);
+    const s = Math.max(1, Math.min(5, fromEvent(e.clientX)));
+    // 保留一位小数，只有落在 x.9 ~ x+1.0 才吸附到下一个整数，其余小数原样保留。
+    const oneDecimal = Math.round(s * 10) / 10;
+    const frac = oneDecimal - Math.floor(oneDecimal);
+    // 容差 0.899 抵消浮点误差，确保 x.9 稳定吸附到下一个整数
+    const snapped = frac >= 0.899 ? Math.floor(oneDecimal) + 1 : oneDecimal;
+    onChange(Math.max(1, Math.min(5, snapped)));
     setDragScore(null);
     setDragTierIdx(-1);
     buzz(haptics);
