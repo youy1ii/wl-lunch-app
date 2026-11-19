@@ -4,14 +4,14 @@
 @import "./tailwind-theme.css";
 @import "./typography.css";
 
-/* 网点波点装饰纹理 */
+/* 网点波点装饰纹理：--dot-tint 由背景亮度自动设为黑/白，未设时回退主题前景色 */
 .dots-bg {
-  background-image: radial-gradient(color-mix(in oklab, var(--foreground) 14%, transparent) 1.2px, transparent 1.3px);
+  background-image: radial-gradient(color-mix(in oklab, var(--dot-tint, var(--foreground)) 14%, transparent) 1.2px, transparent 1.3px);
   background-size: 14px 14px;
 }
 
 .dots-bg-fine {
-  background-image: radial-gradient(color-mix(in oklab, var(--foreground) 10%, transparent) 1px, transparent 1.1px);
+  background-image: radial-gradient(color-mix(in oklab, var(--dot-tint, var(--foreground)) 10%, transparent) 1px, transparent 1.1px);
   background-size: 8px 8px;
 }
 
@@ -73,10 +73,10 @@ body {
     align-items: center;
     justify-content: center;
   }
-  /* 两侧不再是黑条：跟随主题背景色，波点无限延伸到整屏 */
+  /* 两侧氛围区：跟随自定义背景色（--app-bg），消除黑边白边；波点无限延伸且按底色亮度自动黑白 */
   body {
-    background-color: var(--background) !important;
-    background-image: radial-gradient(color-mix(in oklab, var(--foreground) 14%, transparent) 1.2px, transparent 1.3px) !important;
+    background-color: var(--app-bg, var(--background)) !important;
+    background-image: radial-gradient(color-mix(in oklab, var(--dot-tint, var(--foreground)) 14%, transparent) 1.2px, transparent 1.3px) !important;
     background-size: 14px 14px !important;
     background-attachment: fixed !important;
   }

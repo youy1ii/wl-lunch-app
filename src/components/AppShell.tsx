@@ -66,6 +66,24 @@ export default function AppShell() {
     if (theme !== 'system') document.documentElement.classList.add(`theme-${theme}`);
   }, [settings.theme]);
 
+  // 自定义背景色：两侧氛围区跟随同一底色；并按底色亮度自动切换波点黑/白。
+  // 不设自定义色时移除变量，回退到主题背景色 / 主题前景色（本来就是亮暗自适应）。
+  useEffect(() => {
+    const root = document.documentElement;
+    if (settings.bgColor) {
+      root.style.setProperty('--app-bg', settings.bgColor);
+      const hex = settings.bgColor.replace('#', '');
+      const r = parseInt(hex.slice(0, 2), 16) || 0;
+      const g = parseInt(hex.slice(2, 4), 16) || 0;
+      const b = parseInt(hex.slice(4, 6), 16) || 0;
+      const lightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      root.style.setProperty('--dot-tint', lightness > 0.5 ? '#000000' : '#ffffff');
+    } else {
+      root.style.removeProperty('--app-bg');
+      root.style.removeProperty('--dot-tint');
+    }
+  }, [settings.bgColor]);
+
   // 语言切换 → 全套 UI 字体跟随（含 portal 弹层，因为它们挂在 body 上继承 --font-sans）
   useEffect(() => {
     const lang: Lang = settings.lang ?? 'zh';
@@ -189,7 +207,7 @@ export default function AppShell() {
         (settings.theme ?? 'dark') === 'light' && 'theme-light',
       )}
       style={{
-        background: settings.bgColor || undefined,
+        backgroundColor: settings.bgColor || undefined,
         color: settings.textColor || undefined,
         fontFamily: settings.font
           ? `'${settings.font}', ${LANG_FONT_STACK[settings.lang ?? 'zh']}`
