@@ -155,16 +155,33 @@ body {
 .anim-pop { animation: pop-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-page { animation: page-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
-/* 切页动画（外观可开关）：轻量淡入 + 轻微上浮，0.5 秒收尾干净，不闪不糊 */
+/* 切页动画（外观可开关）：从上方下拉，页面由模糊波点收敛为清晰，0.5 秒。
+   页面全程不淡入（opacity 始终 1），只靠位移/模糊/波点收敛表达"落定"，避免加载失败的观感。 */
 @keyframes page-drop {
-  0%   { opacity: 0; transform: translateY(10px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0%   { transform: translateY(-24px); filter: blur(7px); }
+  100% { transform: translateY(0); filter: blur(0); }
+}
+@keyframes page-dots-out {
+  0%   { opacity: 0.4; transform: scale(1.03); }
+  100% { opacity: 0; transform: scale(1); }
 }
 .anim-page-drop {
+  position: relative;
   animation: page-drop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+.anim-page-drop::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: inherit;
+  background-image: radial-gradient(var(--dot-tint, var(--foreground)) 1.4px, transparent 1.5px);
+  background-size: 16px 16px;
+  animation: page-dots-out 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
 @media (prefers-reduced-motion: reduce) {
-  .anim-page-drop { animation: none; }
+  .anim-page-drop, .anim-page-drop::after { animation: none; }
 }
 .anim-tier { animation: tier-zoom 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-float { animation: float-y 3s ease-in-out infinite; }

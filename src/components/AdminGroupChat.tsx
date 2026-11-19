@@ -3,7 +3,7 @@ import { X, Send, Pin, Megaphone, MoreVertical, Users, UserX, ShieldOff, AtSign,
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
-import { cn, fmtBJT } from '@/lib/utils';
+import { cn, fmtBJT, parseServerDate } from '@/lib/utils';
 
 interface AdminMessage {
   id: number;
@@ -95,7 +95,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
     const start = sessionStartRef.current;
     // 打开时刻之前的历史一律不显示（含置顶公告），实现"每次打开清空"。
     const fresh = start
-      ? (data as AdminMessage[]).filter((m) => new Date(m.created_at).getTime() >= start - 1000)
+      ? (data as AdminMessage[]).filter((m) => parseServerDate(m.created_at).getTime() >= start - 1000)
       : [];
     setMessages(fresh);
   }

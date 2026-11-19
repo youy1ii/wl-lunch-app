@@ -255,7 +255,7 @@ export default function AppShell() {
     { to: '/me', icon: UserRound, key: 'me', end: false },
   ];
 
-  // 导航栏切换：无动画；其他切页：按外观开关播放淡入动画
+  // 导航栏切换：无动画；其他切页：按外观开关播放下拉清晰动画
   const pageAnimClass = skipTabAnimRef.current
     ? ''
     : settings.pageAnim !== false ? 'anim-page-drop' : 'anim-page';
