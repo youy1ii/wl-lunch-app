@@ -214,6 +214,8 @@ export default function AppShell() {
           : LANG_FONT_STACK[settings.lang ?? 'zh'],
         ['--primary' as string]: settings.accent || undefined,
         ['--ring' as string]: settings.accent || undefined,
+        // 第二强调色：只设一个时两端同色(纯色)，设两个时面状强调块走主→副渐变
+        ['--color-primary-2' as string]: settings.accent2 || settings.accent || undefined,
         ['--card-alpha' as string]: `${Math.round(settings.opacity * 100)}%`,
         ['--card' as string]: settings.theme === 'dark' ? '#2a2a2a' : undefined,
       }}

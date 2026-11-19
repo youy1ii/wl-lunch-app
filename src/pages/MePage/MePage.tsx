@@ -66,6 +66,7 @@ export default function MePage() {
   const hasAdminAccess = isAdmin || isOwner;
   const effectiveFrameId = myFrameId || (isOwner ? 'beta' : isAdmin ? 'gold' : '');
   const [showSwitchAccount, setShowSwitchAccount] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const pendingCount = feedbacks.filter((f) => f.status === 'pending').length;
   const fileRef = useRef<HTMLInputElement>(null);
   const headerRef = useRef<HTMLInputElement>(null);
@@ -617,16 +618,16 @@ export default function MePage() {
         document.body,
       )}
 
-      {hasAdminAccess && (
       <button
         type="button"
-        onClick={() => setShowSwitchAccount(true)}
+        onClick={() => hasAdminAccess ? setShowSwitchAccount(true) : setShowLogoutConfirm(true)}
         className="card-solid pressable mt-4 flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-destructive shadow-sm ring-1 ring-destructive/20"
       >
         <LogOut size={16} />
-        {t(settings.lang, 'switchAccount')} / {t(settings.lang, 'logout')}
+        {hasAdminAccess
+          ? `${t(settings.lang, 'switchAccount')} / ${t(settings.lang, 'logout')}`
+          : t(settings.lang, 'logout')}
       </button>
-      )}
 
       {showSwitchAccount && createPortal(
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50" onClick={() => setShowSwitchAccount(false)}>
@@ -648,6 +649,36 @@ export default function MePage() {
             <button type="button" onClick={() => { logout(); setShowSwitchAccount(false); }} className="pressable mt-2 w-full rounded-xl border border-border py-2.5 text-sm font-bold text-foreground">
               {t(settings.lang, 'registerNewAccount')}
             </button>
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {/* 普通用户退出确认弹窗 */}
+      {showLogoutConfirm && createPortal(
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-6" onClick={() => setShowLogoutConfirm(false)}>
+          <div className="anim-pop card-solid w-full max-w-xs rounded-2xl p-5 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <LogOut size={24} />
+            </div>
+            <h3 className="mb-1 text-base font-black">{t(settings.lang, 'logout')}</h3>
+            <p className="mb-5 text-xs leading-relaxed text-muted-foreground">确定要退出登录吗？退出后将返回登录注册界面。</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="pressable flex-1 rounded-xl bg-muted py-2.5 text-sm font-bold text-foreground"
+              >
+                {t(settings.lang, 'cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => { logout(); setShowLogoutConfirm(false); }}
+                className="pressable flex-1 rounded-xl bg-destructive py-2.5 text-sm font-bold text-white"
+              >
+                {t(settings.lang, 'logout')}
+              </button>
+            </div>
           </div>
         </div>,
         document.body,

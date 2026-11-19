@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { ChevronLeft, Upload } from 'lucide-react';
+import { ChevronLeft, Upload, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
@@ -21,6 +21,7 @@ export default function AppearancePage() {
     setSettings({
       lang: 'zh',
       accent: '#E8B923',
+      accent2: undefined,
       bgColor: '',
       textColor: '',
       bgImage: null,
@@ -115,11 +116,31 @@ export default function AppearancePage() {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-bold">{t(settings.lang, 'accentColor')}</span>
-            <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-mono font-bold">
+            <span className="flex items-center gap-1.5 rounded-full bg-muted px-2 py-1 text-[10px] font-mono font-bold">
               <span className="h-3 w-3 rounded-full ring-1 ring-black/20" style={{ background: settings.accent }} />
               {settings.accent.toUpperCase()}
+              {settings.accent2 && (
+                <>
+                  <span className="text-muted-foreground">→</span>
+                  <span className="h-3 w-3 rounded-full ring-1 ring-black/20" style={{ background: settings.accent2 }} />
+                  {settings.accent2.toUpperCase()}
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ accent2: undefined })}
+                    title="取消第二强调色"
+                    className="pressable -mr-0.5 ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-foreground/15 hover:bg-destructive/60 hover:text-white"
+                  >
+                    <X size={11} strokeWidth={3} />
+                  </button>
+                </>
+              )}
             </span>
           </div>
+          {/* 配色预览：单色=纯色，双色=渐变 */}
+          <div
+            className="mb-3 h-6 w-full rounded-lg ring-1 ring-black/10"
+            style={{ background: `linear-gradient(90deg, ${settings.accent}, ${settings.accent2 || settings.accent})` }}
+          />
           <div className="flex flex-wrap items-center gap-2">
             {PRESET_COLORS.map((color) => (
               <button
@@ -134,7 +155,7 @@ export default function AppearancePage() {
               />
             ))}
             <label
-              className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full overflow-hidden pressable"
+              className="relative flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full ring-2 ring-offset-2 ring-foreground/30 pressable"
               title="自定义主色"
             >
               <input
@@ -147,14 +168,18 @@ export default function AppearancePage() {
                 className="h-full w-full"
                 style={{ background: `conic-gradient(from 0deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)` }}
               />
-              <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold drop-shadow">
+              <span className="absolute inset-0 flex items-center justify-center text-white text-sm font-black drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                 +
               </span>
             </label>
-            {/* 第二个颜色（渐变副色） */}
+            {/* 第二个颜色（渐变副色）：中心用半圆区分，直到设置了才显示叉号可取消 */}
             <label
-              className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full overflow-hidden pressable"
+              className={cn(
+                'relative flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full ring-2 ring-offset-2 pressable',
+                settings.accent2 ? 'ring-foreground' : 'ring-foreground/30',
+              )}
               title="自定义副色（渐变）"
+              style={!settings.accent2 ? { background: `conic-gradient(from 180deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)` } : undefined}
             >
               <input
                 type="color"
@@ -162,16 +187,18 @@ export default function AppearancePage() {
                 onChange={(e) => setSettings({ accent2: e.target.value })}
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               />
-              <span
-                className="h-full w-full"
-                style={{ background: `conic-gradient(from 180deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)` }}
-              />
-              <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold drop-shadow">
-                +
-              </span>
+              {settings.accent2 ? (
+                <span className="h-full w-full" style={{ background: settings.accent2 }} />
+              ) : (
+                <span className="absolute inset-0 flex items-center justify-center text-white text-sm font-black drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                  +
+                </span>
+              )}
             </label>
           </div>
-          <p className="mt-1 text-[10px] text-muted-foreground">第二个颜色会和主色组成渐变</p>
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            {settings.accent2 ? '主色用于文字，主→副组成按钮渐变。点右上角 × 取消副色。' : t(settings.lang, 'secondaryHint')}
+          </p>
         </div>
 
         <div>

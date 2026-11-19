@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
+import { supabase } from '@/lib/supabase';
 import type { IUser } from '@/lib/types';
 
 export default function LoginPage() {
@@ -36,18 +37,25 @@ export default function LoginPage() {
     setStep('reg2');
   };
 
-  const handleReg2 = () => {
+  const handleReg2 = async () => {
     if (!realName.trim()) { setErr('请填真实姓名'); return; }
     let finalRole: 'student' | 'teacher' = role;
     const code = inviteCode.trim().toUpperCase();
     if (code) {
-      const codes = JSON.parse(localStorage.getItem('wl-lunch:invite-codes') || '[]');
-      const found = codes.find((ic: any) => ic.code === code);
-      if (!found) { setErr('邀请码无效'); return; }
-      if (found.used) { setErr('该邀请码已被使用'); return; }
-      // Mark as used
-      found.used = true;
-      localStorage.setItem('wl-lunch:invite-codes', JSON.stringify(codes));
+      // 邀请码存数据库，任意设备可用；一次性，用后标记 used_by/used_at
+      const { data: found, error: qErr } = await supabase
+        .from('invite_codes')
+        .select('id, code, used_by')
+        .eq('code', code)
+        .maybeSingle();
+      if (qErr || !found) { setErr(t(lang, 'errInvite') || '邀请码无效'); return; }
+      if (found.used_by) { setErr('该邀请码已被使用'); return; }
+      const { error: uErr } = await supabase
+        .from('invite_codes')
+        .update({ used_by: account.trim() || nickname.trim(), used_at: new Date().toISOString() })
+        .eq('id', found.id)
+        .is('used_by', null);
+      if (uErr) { setErr('邀请码校验失败，请重试'); return; }
       finalRole = 'teacher';
     } else if (role === 'teacher') {
       setErr('老师注册需要邀请码'); return;
