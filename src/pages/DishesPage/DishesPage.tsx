@@ -112,7 +112,7 @@ export default function DishesPage() {
         </div>
       </div>
 
-      <div className="grid flex-1 auto-rows-max grid-cols-2 gap-3 overflow-y-auto pb-4 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid flex-1 auto-rows-max grid-cols-2 gap-3 overflow-y-auto pb-4">
         {list.map((d, i) => {
           const avg = avgOf(d);
           const tier = tierOf(avg);

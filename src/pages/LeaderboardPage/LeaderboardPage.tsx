@@ -94,7 +94,7 @@ export default function LeaderboardPage() {
             ))}
           </div>
 
-          <div key={mode} className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+          <div key={mode} className="space-y-3">
             {pool.map((dish, i) => {
               const avg = avgOf(dish);
               const tier = tierOf(avg);
