@@ -12,8 +12,7 @@
         root.setAttribute('data-device', mobile ? 'mobile' : 'desktop');
         function fit() {
           if (mobile) return;
-          var z = Math.min(1.2, (window.innerWidth - 24) / 720, (window.innerHeight - 24) / 720);
-          root.style.setProperty('--shell-zoom', Math.max(0.35, z).toFixed(4));
+          root.style.setProperty('--shell-zoom', '1');
         }
         fit();
         window.addEventListener('resize', fit);
@@ -23,8 +22,8 @@
     <link rel="apple-touch-icon" href="/wl-lunch-app/icon.png" />
     <title>WL Lunch</title>
     <script>(function(l){if(l.search[1]==="/"){var d=l.search.slice(1).split("&").map(function(s){return s.replace(/~and~/g,"&")}).join("?");window.history.replaceState(null,"",l.pathname.slice(0,-1)+d+l.hash)}})(window.location);</script>
-    <script type="module" crossorigin src="/wl-lunch-app/assets/index-C41IwEOf.js"></script>
-    <link rel="stylesheet" crossorigin href="/wl-lunch-app/assets/index-cVf14jBN.css">
+    <script type="module" crossorigin src="/wl-lunch-app/assets/index-z9QiXyzg.js"></script>
+    <link rel="stylesheet" crossorigin href="/wl-lunch-app/assets/index-CyUCB_XY.css">
   </head>
   <body>
     <div id="root"></div>
