@@ -3,6 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+    <script>
+      /* 设备识别：只看设备本身，不看窗口宽度。电脑预览面板再窄也显示电脑版。 */
+      (function () {
+        var ua = navigator.userAgent || '';
+        var mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua)
+          || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua));
+        var root = document.documentElement;
+        root.setAttribute('data-device', mobile ? 'mobile' : 'desktop');
+        function fit() {
+          if (mobile) return;
+          /* 桌面版设计画布 720x720（侧栏190 + 卡片468 + 间隙），按视口整体等比缩放 */
+          var z = Math.min(1.2, (window.innerWidth - 24) / 720, (window.innerHeight - 24) / 720);
+          root.style.setProperty('--shell-zoom', Math.max(0.35, z).toFixed(4));
+        }
+        fit();
+        window.addEventListener('resize', fit);
+      })();
+    </script>
     <link rel="icon" type="image/png" href="/icon.png" />
     <link rel="apple-touch-icon" href="/icon.png" />
     <title>WL Lunch</title>

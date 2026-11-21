@@ -71,20 +71,20 @@ body {
   line-height: 1.6;
 }
 
-/* ===== 平板适配：768–1023px 仍呈现为居中的手机卡片 ===== */
-@media (min-width: 768px) and (max-width: 1023px) {
-  html, body, #root {
+/* ===== 平板适配：手机设备在较宽视口仍呈现为居中的手机卡片 ===== */
+@media (min-width: 768px) {
+  html[data-device="mobile"], html[data-device="mobile"] body {
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  body {
+  html[data-device="mobile"] body {
     background: radial-gradient(circle at 50% -10%, #4a4436 0%, #2a2620 42%, #15130f 100%) !important;
   }
-  html.theme-light body {
+  html[data-device="mobile"].theme-light body {
     background: radial-gradient(circle at 50% -10%, #fffaf0 0%, #f6ead0 48%, #e6d5ac 100%) !important;
   }
-  .app-frame {
+  html[data-device="mobile"] .app-frame {
     width: 100% !important;
     max-width: 468px !important;
     height: min(940px, calc(100dvh - 40px)) !important;
@@ -96,75 +96,76 @@ body {
       0 0 0 9px rgba(255, 255, 255, 0.035) !important;
     overflow: hidden !important;
   }
-  .wx-notif { top: 24px !important; }
+  html[data-device="mobile"] .wx-notif { top: 24px !important; }
 }
 
 /* ===== 桌面适配：左侧导航 + 右侧等比放大的手机卡片 =====
-   关键：右侧不再是 flex-1 铺满的 1200px 内容区（那样 w-full 的图片会被拉长变形），
-   而是固定逻辑宽度 468px 的手机卡片，用 zoom 整体等比放大，比例与手机端完全一致。 */
-@media (min-width: 1024px) {
-  html, body, #root {
-    display: block;
-  }
-  body {
-    background: radial-gradient(circle at 50% -10%, #4a4436 0%, #2a2620 42%, #15130f 100%) !important;
-  }
-  html.theme-light body {
-    background: radial-gradient(circle at 50% -10%, #fffaf0 0%, #f6ead0 48%, #e6d5ac 100%) !important;
-  }
-  /* 外壳：整屏 flex-row，左侧导航 + 右侧卡片居中；外壳本身透明，氛围底由 body 提供 */
-  .app-frame {
-    width: 100% !important;
-    max-width: none !important;
-    height: 100dvh !important;
-    max-height: none !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    background-color: transparent !important;
-    background-image: none !important;
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    overflow: hidden !important;
-  }
-  /* 左侧导航：保持第一版的 228px，不参与缩放 */
-  .app-sidebar {
-    display: flex !important;
-    align-self: stretch !important;
-    height: auto !important;
-  }
-  .app-bottom-nav, .app-bottom-fade { display: none !important; }
-  .app-edge-blur { display: none !important; }
-
-  /* 右侧卡片：逻辑宽度仍是 468px，zoom 让整棵子树等比放大，
-     字体/间距/图标/banner 图片一起变大，比例不变，不会被横向拉长。 */
-  .app-main {
-    flex: 0 0 auto !important;
-    width: 468px !important;
-    max-width: 468px !important;
-    height: calc((100dvh - 40px) / 1.2) !important;
-    max-height: none !important;
-    margin: auto !important;
-    zoom: 1.2;
-    border-radius: 2.25rem !important;
-    background-color: var(--app-bg, var(--background)) !important;
-    background-image: radial-gradient(color-mix(in oklab, var(--dot-tint, var(--foreground)) 14%, transparent) 1.2px, transparent 1.3px) !important;
-    background-size: 14px 14px !important;
-    box-shadow:
-      0 40px 120px -24px rgba(0, 0, 0, 0.75),
-      0 0 0 1px rgba(255, 255, 255, 0.07),
-      0 0 0 9px rgba(255, 255, 255, 0.035) !important;
-    padding-bottom: 0 !important;
-    overflow-y: auto !important;
-  }
-  .app-float-btns {
-    inset-inline: auto 24px !important;
-    justify-content: flex-end !important;
-    gap: 10px !important;
-  }
-  .wx-notif { top: 24px !important; }
+   按设备识别（data-device="desktop"）切换，与窗口宽度无关：
+   即使电脑预览面板很窄也显示电脑版，整块按 --shell-zoom 等比缩放不溢出。
+   右侧卡片固定逻辑宽 468px，整棵子树等比放大，w-full 的图片不会被拉长变形。 */
+html[data-device="desktop"], html[data-device="desktop"] body, html[data-device="desktop"] #root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+html[data-device="desktop"] body {
+  background: radial-gradient(circle at 50% -10%, #4a4436 0%, #2a2620 42%, #15130f 100%) !important;
+}
+html[data-device="desktop"].theme-light body {
+  background: radial-gradient(circle at 50% -10%, #fffaf0 0%, #f6ead0 48%, #e6d5ac 100%) !important;
+}
+/* 设计画布：逻辑 720x720（侧栏190 + 卡片468 + 间隙），按视口整体等比缩放 */
+html[data-device="desktop"] .app-frame {
+  width: 720px !important;
+  max-width: none !important;
+  height: 720px !important;
+  max-height: none !important;
+  margin: 0 !important;
+  zoom: var(--shell-zoom, 1);
+  border-radius: 2.25rem !important;
+  box-shadow:
+    0 40px 120px -24px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 0 0 9px rgba(255, 255, 255, 0.035) !important;
+  background-color: var(--app-bg, var(--background)) !important;
+  background-image: radial-gradient(color-mix(in oklab, var(--dot-tint, var(--foreground)) 14%, transparent) 1.2px, transparent 1.3px) !important;
+  background-size: 14px 14px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+}
+/* 左侧导航：190px 逻辑宽，跟着画布一起等比缩放 */
+html[data-device="desktop"] .app-sidebar {
+  display: flex !important;
+  width: 190px !important;
+  align-self: stretch !important;
+  height: auto !important;
+}
+html[data-device="desktop"] .app-bottom-nav,
+html[data-device="desktop"] .app-bottom-fade,
+html[data-device="desktop"] .app-edge-blur { display: none !important; }
+
+/* 右侧卡片：逻辑宽度 468px，整棵子树等比放大，比例与手机端完全一致，图片不变形 */
+html[data-device="desktop"] .app-main {
+  flex: 1 1 auto !important;
+  width: 468px !important;
+  max-width: 468px !important;
+  height: 100% !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding-bottom: 0 !important;
+  overflow-y: auto !important;
+}
+html[data-device="desktop"] .app-float-btns {
+  inset-inline: 0 12px !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+}
+html[data-device="desktop"] .wx-notif { top: 24px !important; }
 
 /* 金色泛光（收敛，不晃眼） */
 .glow-gold {
