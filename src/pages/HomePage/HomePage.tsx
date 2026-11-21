@@ -71,7 +71,7 @@ function PodiumBlock({
                 <span className="text-lg font-black" style={{ color }}>
                   {avgOf(d).toFixed(1)}
                 </span>
-                <span className="text-[11px] text-muted-foreground">{votesOf(d)}票</span>
+                <span className="text-[11px] text-muted-foreground">{votesOf(d)} {t(lang, 'votes')}</span>
               </div>
               <div
                 className={cn('mt-2 flex w-full items-start justify-center rounded-t-lg pt-1.5 text-xs font-bold text-white/90 ring-1 ring-black/5', meta.barH)}

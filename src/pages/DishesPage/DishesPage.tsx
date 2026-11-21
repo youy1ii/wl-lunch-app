@@ -14,6 +14,8 @@ const HEAD_H = 'h-28';
 
 export default function DishesPage() {
   const { dishes, settings, myRatings } = useApp();
+  const pick = (zh: string, ja: string, en: string) =>
+    settings.lang === 'zh' ? zh : settings.lang === 'ja' ? ja : en;
   const [query, setQuery] = useState('');
   const [win, setWin] = useState<'all' | WindowId>('all');
   const [price, setPrice] = useState<PriceBand>('all');
@@ -82,14 +84,14 @@ export default function DishesPage() {
       {/* 条件筛选：价格 + 荤素 */}
       <div className="mb-3 space-y-1.5">
         <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-          <button type="button" onClick={() => setPrice('all')} className={chip(price === 'all')}>全部价格</button>
-          <button type="button" onClick={() => setPrice('cheap')} className={chip(price === 'cheap')}>≤¥10</button>
-          <button type="button" onClick={() => setPrice('mid')} className={chip(price === 'mid')}>¥10–20</button>
+          <button type="button" onClick={() => setPrice('all')} className={chip(price === 'all')}>{t(settings.lang, 'allPrices')}</button>
+          <button type="button" onClick={() => setPrice('cheap')} className={chip(price === 'cheap')}>{pick('≤¥10', '≤¥10', '≤¥10')}</button>
+          <button type="button" onClick={() => setPrice('mid')} className={chip(price === 'mid')}>{pick('¥10–20', '¥10–20', '¥10–20')}</button>
           <button type="button" onClick={() => setPrice('dear')} className={chip(price === 'dear')}>&gt;¥20</button>
         </div>
         <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-          <button type="button" onClick={() => setMeat('all')} className={chip(meat === 'all')}>荤素不限</button>
-          <button type="button" onClick={() => setMeat('meat')} className={chip(meat === 'meat')}>荤菜</button>
+          <button type="button" onClick={() => setMeat('all')} className={chip(meat === 'all')}>{t(settings.lang, 'anyMeat')}</button>
+          <button type="button" onClick={() => setMeat('meat')} className={chip(meat === 'meat')}>{t(settings.lang, 'meatDish')}</button>
           <button
             type="button"
             onClick={() => setMeat('veggie')}
@@ -97,7 +99,7 @@ export default function DishesPage() {
           >
             <span className="flex items-center gap-1">
               <Leaf size={11} />
-              素菜专区
+              {t(settings.lang, 'vegZone')}
             </span>
           </button>
           <button
@@ -106,7 +108,7 @@ export default function DishesPage() {
             className={cn(chip(ratedOnly), ratedOnly && '!bg-primary !text-primary-foreground')}
           >
             <span className="flex items-center gap-1">
-              ★ 我打过的
+              {t(settings.lang, 'myRated')}
             </span>
           </button>
         </div>
@@ -139,7 +141,7 @@ export default function DishesPage() {
                 <span className="absolute right-2 top-2 flex gap-1">
                   {d.isNew && (
                     <span className="flex h-5 items-center rounded-full bg-red-500 px-1.5 text-[9px] font-black text-white animate-pulse">
-                      新品
+                      {t(settings.lang, 'newDish')}
                     </span>
                   )}
                   {myRatings[d.id] && (

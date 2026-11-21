@@ -40,6 +40,9 @@ const PRIVACY_ITEMS = [
 export default function MePage() {
   const { user, isAdmin, settings, setSettings, logout, dishes, followees, updateUserProfile, deleteReview, toggleFollow, frames, myFrameId, setActiveFrame, profileHeader, setHeaderImage, feedbacks, replyFeedback, savedAccounts, switchAccount, redeemFrameCode } = useApp();
   const navigate = useNavigate();
+  // 少量没有走词条表的固定文案：按当前语言直接取对应文本
+  const pick = (zh: string, ja: string, en: string) =>
+    settings.lang === 'zh' ? zh : settings.lang === 'ja' ? ja : en;
   const [showMine, setShowMine] = useState(false);
   const [actionReview, setActionReview] = useState<{ dishId: number; reviewId: number; dishName: string } | null>(null);
   const [confirmDelReview, setConfirmDelReview] = useState<{ dishId: number; reviewId: number } | null>(null);
@@ -85,7 +88,7 @@ export default function MePage() {
     const reader = new FileReader();
     reader.onload = () => {
       updateUserProfile({ avatar: reader.result as string }).then((ok) => {
-        showToast(ok ? '头像上传成功' : 'PRTS代理指挥失败。请检查网络再次尝试');
+        showToast(ok ? pick('头像上传成功', 'アバターをアップしました', 'Avatar uploaded') : pick('PRTS代理指挥失败。请检查网络再次尝试', 'PRTSエージェントに失敗しました。ネットワークを確認してください', 'PRTS request failed. Check your network and retry'));
       });
     };
     reader.readAsDataURL(file);
@@ -113,7 +116,7 @@ export default function MePage() {
   ];
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto p-4">
+    <div className="h-full overflow-y-auto p-4">
       {/* 网易云风居中头像 */}
       <div className="anim-rise flex flex-col items-center pt-6">
         <div className="relative">
@@ -150,28 +153,30 @@ export default function MePage() {
               "inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-black shadow-sm " +
               (isOwner ? "bg-emerald-500 text-white shadow-emerald-400/50" : "bg-amber-500 text-white shadow-amber-400/50")
             }>
-              {isOwner ? '总管理员' : '管理员'}
+              {isOwner ? pick('总管理员', '総管理者', 'Owner') : t(settings.lang, 'admin')}
             </span>
           )}
         </div>
-        <button type="button" className="pressable mt-0.5 text-[10px] text-muted-foreground" onClick={() => { if (user?.uid) { navigator.clipboard.writeText(user.uid); showToast("UID已复制"); } }}>UID: {user?.uid}</button>
+        <button type="button" className="pressable mt-0.5 text-[10px] text-muted-foreground" onClick={() => { if (user?.uid) { navigator.clipboard.writeText(user.uid); showToast(pick('UID已复制', 'UIDをコピーしました', 'UID copied')); } }}>UID: {user?.uid}</button>
         <div className="mt-1 text-xs text-muted-foreground">
-          {user?.role === 'student' ? `${user.grade ?? ''}${user.klass ?? ''}学生` : (isOwner ? '总管理员' : '管理员')}
+          {user?.role === 'student'
+            ? `${user.grade ?? ''}${user.klass ?? ''}${pick('学生', '学生', 'Student')}`
+            : (isOwner ? pick('总管理员', '総管理者', 'Owner') : t(settings.lang, 'admin'))}
         </div>
         <div className="mt-4 flex items-center gap-6 text-center">
           <button type="button" className="pressable" onClick={() => setShowFollowing(true)}>
             <div className="text-lg font-black">{followees.length}</div>
-            <div className="text-[10px] text-muted-foreground">关注</div>
+            <div className="text-[10px] text-muted-foreground">{pick('关注', 'フォロー', 'Following')}</div>
           </button>
           <div className="h-6 w-px bg-border" />
           <button type="button" className="pressable" onClick={() => setShowFollowers(true)}>
             <div className="text-lg font-black">0</div>
-            <div className="text-[10px] text-muted-foreground">粉丝</div>
+            <div className="text-[10px] text-muted-foreground">{pick('粉丝', 'フォロワー', 'Followers')}</div>
           </button>
           <div className="h-6 w-px bg-border" />
           <button type="button" className="pressable" onClick={() => setShowMine(true)}>
             <div className="text-lg font-black">{myCount}</div>
-            <div className="text-[10px] text-muted-foreground">评价</div>
+            <div className="text-[10px] text-muted-foreground">{pick('评价', '評価', 'Reviews')}</div>
           </button>
         </div>
 
@@ -180,7 +185,7 @@ export default function MePage() {
           type="button"
           onClick={() => {
             const b = window.prompt('个性签名（最多200字，可换行）', user?.bio ?? '');
-            if (b !== null) { updateUserProfile({ bio: b.slice(0, 200) }); showToast('个性签名已保存'); }
+            if (b !== null) { updateUserProfile({ bio: b.slice(0, 200) }); showToast(pick('个性签名已保存', 'プロフィールを保存しました', 'Bio saved')); }
           }}
           className="pressable mt-3 line-clamp-2 max-w-[260px] whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground"
           style={{
@@ -190,7 +195,7 @@ export default function MePage() {
             overflow: 'hidden',
           }}
         >
-          {user?.bio || '点这里写个性签名...'}
+          {user?.bio || pick('点这里写个性签名...', 'ここをタップしてプロフィール文を書く...', 'Tap here to write your bio...')}
         </button>
       </div>
 
@@ -203,12 +208,12 @@ export default function MePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-black">我的评价（{myCount}）</h3>
+              <h3 className="text-sm font-black">{t(settings.lang, 'myReviews')} ({myCount})</h3>
               <button type="button" onClick={() => setShowMine(false)} className="pressable rounded-full bg-muted p-1">
                 <X size={16} />
               </button>
             </div>
-            {myReviews.length === 0 && <p className="py-8 text-center text-xs text-muted-foreground">还没打过分，去首页挑一道菜试试</p>}
+            {myReviews.length === 0 && <p className="py-8 text-center text-xs text-muted-foreground">{pick('还没打过分，去首页挑一道菜试试', 'まだ評価していません。ホームで菜品を選んでください', 'No ratings yet. Pick a dish on Home.')}</p>}
             {myReviews.map(({ dish, review }) => (
               <button
                 key={review.id}
@@ -237,10 +242,10 @@ export default function MePage() {
         <div className="fixed inset-0 z-[310] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setShowFollowers(false)}>
           <div className="anim-sheet-up card-solid max-h-[75%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }} onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-black">粉丝</h3>
+              <h3 className="text-sm font-black">{t(settings.lang, 'followers')}</h3>
               <button type="button" onClick={() => setShowFollowers(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
             </div>
-            <p className="py-8 text-center text-xs text-muted-foreground">还没有粉丝，多去评论区互动吧</p>
+            <p className="py-8 text-center text-xs text-muted-foreground">{t(settings.lang, 'noFollowers')}{pick('，多去评论区互动吧', '、コメントで交流しましょう', ' — join the comments to connect')}</p>
           </div>
         </div>,
         document.body,
@@ -250,10 +255,10 @@ export default function MePage() {
         <div className="fixed inset-0 z-[310] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setShowFollowing(false)}>
           <div className="anim-sheet-up card-solid max-h-[75%] w-full max-w-md overflow-y-auto rounded-t-3xl p-5" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }} onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-black">关注</h3>
+              <h3 className="text-sm font-black">{pick('关注', 'フォロー', 'Following')}</h3>
               <button type="button" onClick={() => setShowFollowing(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
             </div>
-            {followees.length === 0 ? <p className="py-8 text-center text-xs text-muted-foreground">还没有关注任何人</p> : followees.map(u => (
+            {followees.length === 0 ? <p className="py-8 text-center text-xs text-muted-foreground">{t(settings.lang, 'noFollowing')}</p> : followees.map(u => (
               <button key={u} type="button" onClick={() => setActionFollow(u)} className="pressable mb-2 flex w-full items-center gap-3 rounded-xl bg-muted p-3 text-left text-xs">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-black text-primary-foreground">{u.slice(0, 1).toUpperCase()}</span>
                 <span className="flex-1 font-bold">{u}</span>
@@ -274,14 +279,14 @@ export default function MePage() {
               onClick={() => { const id = actionReview.dishId; setActionReview(null); setShowMine(false); navigate(`/dishes/${id}`); }}
               className="pressable mb-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground"
             >
-              <MessageCircle size={17} /> 前往菜品评论区
+              <MessageCircle size={17} /> {pick('前往菜品评论区', '菜品のコメントへ', 'Go to comments')}
             </button>
             <button
               type="button"
               onClick={() => { setConfirmDelReview({ dishId: actionReview.dishId, reviewId: actionReview.reviewId }); setActionReview(null); }}
               className="pressable flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-3 text-sm font-bold text-destructive"
             >
-              <Trash2 size={17} /> 删除评价
+              <Trash2 size={17} /> {t(settings.lang, 'deleteReview')}
             </button>
           </div>
         </div>,
@@ -294,7 +299,7 @@ export default function MePage() {
           <div className="anim-pop card-solid w-full max-w-xs rounded-2xl p-5 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive"><Trash2 size={22} /></div>
             <div className="text-sm font-black">{t(settings.lang, 'deleteReviewConfirm')}</div>
-            <p className="mt-1 text-[11px] text-muted-foreground">删除后不可恢复</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">{pick('删除后不可恢复', '削除すると元に戻せません', 'Cannot be undone')}</p>
             <div className="mt-5 flex gap-2">
               <button type="button" onClick={() => setConfirmDelReview(null)} className="pressable flex-1 rounded-xl bg-muted py-2.5 text-sm font-bold">{t(settings.lang, 'cancel')}</button>
               <button
@@ -303,7 +308,9 @@ export default function MePage() {
                   const { dishId, reviewId } = confirmDelReview!;
                   setConfirmDelReview(null);
                   deleteReview(dishId, reviewId).then((ok) => {
-                    showToast(ok ? '评价已删除' : 'PRTS代理指挥失败。请检查网络再次尝试');
+                    showToast(ok
+                      ? pick('评价已删除', 'レビューを削除しました', 'Review deleted')
+                      : pick('PRTS代理指挥失败。请检查网络再次尝试', 'PRTSエージェントに失敗しました。ネットワークを確認してください', 'PRTS request failed. Check your network and retry'));
                   });
                 }}
                 className="pressable flex-1 rounded-xl bg-destructive py-2.5 text-sm font-bold text-destruct-foreground"
@@ -326,10 +333,10 @@ export default function MePage() {
             </div>
             <button
               type="button"
-              onClick={() => { const name = actionFollow; setActionFollow(null); toggleFollow(name); showToast('已取消关注 ' + name); }}
+              onClick={() => { const name = actionFollow; setActionFollow(null); toggleFollow(name); showToast(pick('已取消关注 ', 'フォロー解除: ', 'Unfollowed ') + name); }}
               className="pressable flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-3 text-sm font-bold text-destructive"
             >
-              <UserMinus size={17} /> 取消关注
+              <UserMinus size={17} /> {pick('取消关注', 'フォロー解除', 'Unfollow')}
             </button>
           </div>
         </div>,
@@ -498,14 +505,14 @@ export default function MePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-black">✨ 头像框装扮</h3>
+              <h3 className="text-sm font-black">✨ {pick('头像框装扮', 'アバターフレーム', 'Avatar Frames')}</h3>
               <button type="button" onClick={() => setShowFrames(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
             </div>
             <div className="mb-3 flex gap-2">
               <input
                 value={frameCode}
                 onChange={(e) => setFrameCode(e.target.value.toUpperCase())}
-                placeholder="输入兑换码"
+                placeholder={pick('输入兑换码', 'コードを入力', 'Enter code')}
                 className="flex-1 rounded-xl bg-muted px-3 py-2 text-xs outline-none"
               />
               <button
@@ -518,7 +525,7 @@ export default function MePage() {
                 }}
                 className="pressable rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
               >
-                兑换
+                {pick('兑换', '交換', 'Redeem')}
               </button>
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -561,7 +568,7 @@ export default function MePage() {
       {cropImg && createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" onClick={() => setCropImg('')}>
           <div className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <p className="mb-2 text-center text-sm font-bold text-white">拖动调整位置，滚轮缩放</p>
+            <p className="mb-2 text-center text-sm font-bold text-white">{pick('拖动调整位置，滚轮缩放', 'ドラッグで移動、ホイールで拡大縮小', 'Drag to reposition, scroll to zoom')}</p>
             <div className="relative mx-auto overflow-hidden rounded-full" style={{ width: 200, height: 200 }}>
               <img
                 src={cropImg}
@@ -571,7 +578,7 @@ export default function MePage() {
             </div>
             <input type="range" min="1" max="3" step="0.1" value={cropZoom} onChange={(e) => setCropZoom(Number(e.target.value))} className="mt-4 w-full" />
             <div className="mt-4 flex gap-2">
-              <button type="button" onClick={() => setCropImg('')} className="flex-1 rounded-full bg-white/20 py-2 text-sm font-bold text-white">取消</button>
+              <button type="button" onClick={() => setCropImg('')} className="flex-1 rounded-full bg-white/20 py-2 text-sm font-bold text-white">{t(settings.lang, 'cancel')}</button>
               <button
                 type="button"
                 onClick={() => {
@@ -582,7 +589,7 @@ export default function MePage() {
                 }}
                 className="flex-1 rounded-full bg-primary py-2 text-sm font-bold text-primary-foreground"
               >
-                确认
+                {t(settings.lang, 'confirm')}
               </button>
             </div>
           </div>
@@ -595,14 +602,14 @@ export default function MePage() {
         <div className="fixed inset-0 z-[310] flex anim-sheet-mask items-end justify-center bg-black/50" onClick={() => setShowBioEdit(false)}>
           <div className="anim-sheet-up w-full max-w-md rounded-t-3xl bg-card p-5" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-black">个性签名</h3>
+              <h3 className="text-sm font-black">{pick('个性签名', 'プロフィール文', 'Bio')}</h3>
               <button type="button" onClick={() => setShowBioEdit(false)} className="pressable rounded-full bg-muted p-1"><X size={16} /></button>
             </div>
             <textarea
               value={bioDraft}
               onChange={(e) => setBioDraft(e.target.value.slice(0, 200))}
               rows={4}
-              placeholder="写点什么..."
+              placeholder={pick('写点什么...', 'ひとこと書いてください...', 'Write something...')}
               className="w-full rounded-xl bg-muted p-3 text-sm outline-none"
             />
             <div className="mb-3 text-right text-[10px] text-muted-foreground">{bioDraft.length}/200</div>
@@ -611,7 +618,7 @@ export default function MePage() {
               onClick={() => { updateUserProfile({ bio: bioDraft }); setShowBioEdit(false); }}
               className="w-full rounded-full bg-primary py-2.5 text-sm font-bold text-primary-foreground pressable"
             >
-              保存
+              {pick('保存', '保存', 'Save')}
             </button>
           </div>
         </div>,
@@ -662,7 +669,7 @@ export default function MePage() {
               <LogOut size={24} />
             </div>
             <h3 className="mb-1 text-base font-black">{t(settings.lang, 'logout')}</h3>
-            <p className="mb-5 text-xs leading-relaxed text-muted-foreground">确定要退出登录吗？退出后将返回登录注册界面。</p>
+            <p className="mb-5 text-xs leading-relaxed text-muted-foreground">{pick('确定要退出登录吗？退出后将返回登录注册界面。', 'ログアウトしますか？ログイン画面に戻ります。', 'Log out? You will return to the login screen.')}</p>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -686,9 +693,13 @@ export default function MePage() {
 
       {/* 低调版权 */}
       <p className="mt-auto pb-4 pt-6 text-center text-[10px] leading-relaxed text-muted-foreground/60">
-        本软件由上海市文来高中2026级同人社团 L Company 与 AI 融合开发
+        {pick(
+          '本软件由上海市文来高中2026级同人社团 L Company 与 AI 融合开发',
+          '本アプリは上海市文来高中2026同人サークル L Company と AI が共同開発しました',
+          'Built by Wenlai High School 2026 fan club L Company with AI',
+        )}
         <br />
-        一切解释权归属文来
+        {pick('一切解释权归属文来', '解釈権は文来に帰属します', 'All rights reserved by Wenlai')}
       </p>
       {toast && (
         <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-black/80 px-4 py-2 text-xs font-bold text-white anim-pop">{toast}</div>

@@ -55,7 +55,7 @@ export default function AnnouncePopup({ announcement }: { announcement: IAnnounc
   }, [announcement.authorUid, user, savedAccounts]);
 
   const isOwner = announcement.authorUid === '00000000';
-  const adminName = admin?.nickname || admin?.real_name || admin?.username || '管理员';
+  const adminName = admin?.nickname || admin?.real_name || admin?.username || t(settings.lang, 'admin');
   const adminAvatar = admin?.avatar || adminName.slice(0, 1);
   const avatarBg = isOwner
     ? 'bg-gradient-to-br from-emerald-300 to-emerald-500 text-emerald-950 ring-emerald-400/80 shadow-[0_0_14px_rgba(52,211,153,0.6)]'
@@ -78,11 +78,11 @@ export default function AnnouncePopup({ announcement }: { announcement: IAnnounc
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 text-sm font-black leading-tight">
               <span className="truncate">{adminName}</span>
-              <span className={'shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold ' + badgeCls}>{isOwner ? '总管理员' : '管理员'}</span>
+              <span className={'shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold ' + badgeCls}>{t(settings.lang, isOwner ? 'totalAdmin' : 'admin')}</span>
             </div>
             <div className="text-[10px] text-muted-foreground">{announcement.date}</div>
           </div>
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">群公告</span>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{t(settings.lang, 'groupAnnouncement')}</span>
         </div>
         <h2 className="mb-4 text-center text-lg font-black">{announcement.title}</h2>
         <div
@@ -108,10 +108,10 @@ export default function AnnouncePopup({ announcement }: { announcement: IAnnounc
               rel="noopener noreferrer"
               className="mt-2 inline-block font-bold text-primary underline"
             >
-              🔗 点击查看详情 →
+              🔗 {t(settings.lang, 'viewDetails')} →
             </a>
           )}
-          <p className="pt-2 text-center text-xs text-muted-foreground">—— 到底啦 ——</p>
+          <p className="pt-2 text-center text-xs text-muted-foreground">—— {t(settings.lang, 'endOfList')} ——</p>
         </div>
         <button
           type="button"

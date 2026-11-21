@@ -130,7 +130,7 @@ export default function LeaderboardPage() {
                           >
                             {tierLabel(tier.score, settings.lang)}
                           </span>
-                          <span>{votesOf(dish)} 票</span>
+                          <span>{votesOf(dish)} {t(settings.lang, 'votes')}</span>
                           {myRatings[dish.id] && (
                             <span
                               className="rounded-full px-2 py-0.5 font-bold ring-1"
