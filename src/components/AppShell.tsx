@@ -335,6 +335,43 @@ export default function AppShell() {
         </div>
       )}
 
+      {/* 桌面侧边导航：手机/平板隐藏，仅桌面显示，替代底部药丸栏 */}
+      <aside className="app-sidebar relative z-[301] hidden w-[228px] shrink-0 flex-col border-r border-border/60 bg-card/70 px-4 py-6 backdrop-blur-xl">
+        <div className="mb-8 flex items-center gap-3 px-2">
+          <img
+            src={`${import.meta.env.BASE_URL}logo.png`}
+            alt="Lunch Company"
+            className="h-11 w-11 rounded-xl object-cover shadow-md"
+          />
+          <div className="min-w-0">
+            <div className="truncate text-base font-black">WL Lunch</div>
+            <div className="truncate text-[11px] text-muted-foreground">{t(settings.lang, 'sidebarSubtitle')}</div>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          {nav.map((item) => (
+            <NavLink
+              key={item.key}
+              to={item.to}
+              end={item.end}
+              state={{ fromTab: true }}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors',
+                  isActive ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                )
+              }
+            >
+              <item.icon size={19} strokeWidth={2.2} />
+              <span>{t(settings.lang, item.key)}</span>
+            </NavLink>
+          ))}
+        </div>
+        <div className="mt-auto px-2 text-[11px] leading-relaxed text-muted-foreground/70">
+          {t(settings.lang, 'sidebarFooter')}
+        </div>
+      </aside>
+
       {/* 微信风格新消息弹窗：从顶部滑入，点头像/卡片跳转对应页面 */}
       {toast && (() => {
         const meta: Record<string, { icon: string; title: string; color: string }> = {

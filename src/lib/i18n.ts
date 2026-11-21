@@ -7,6 +7,8 @@ type Dict = Record<string, string>;
 const zh: Dict = {
   appName: 'WL Lunch',
   slogan: '学校食堂打分榜',
+  sidebarSubtitle: '今天吃什么',
+  sidebarFooter: '今天也要好好吃饭',
   login: '登录',
   code: '验证码',
   getCode: '获取',
@@ -488,6 +490,8 @@ const zh: Dict = {
 const ja: Dict = {
   appName: 'WL Lunch',
   slogan: '学食ランキング',
+  sidebarSubtitle: '今日は何を食べる？',
+  sidebarFooter: '今日も好好食べてね',
   login: 'ログイン',
   code: '認証コード',
   getCode: '送信',
@@ -970,6 +974,8 @@ const ja: Dict = {
 const en: Dict = {
   appName: 'WL Lunch',
   slogan: 'Cafeteria Leaderboard',
+  sidebarSubtitle: 'What to eat today?',
+  sidebarFooter: 'Enjoy your meal!',
   login: 'Log in',
   code: 'Code',
   getCode: 'Send',
