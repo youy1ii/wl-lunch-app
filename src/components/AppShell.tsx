@@ -335,6 +335,43 @@ export default function AppShell() {
         </div>
       )}
 
+      {/* 桌面侧边导航：手机/平板隐藏，仅桌面显示，替代底部药丸栏 */}
+      <aside className="app-sidebar relative z-[301] hidden w-[228px] shrink-0 flex-col border-r border-border/60 bg-card/70 px-4 py-6 backdrop-blur-xl">
+        <div className="mb-8 flex items-center gap-3 px-2">
+          <img
+            src={`${import.meta.env.BASE_URL}logo.png`}
+            alt="Lunch Company"
+            className="h-11 w-11 rounded-xl object-cover shadow-md"
+          />
+          <div className="min-w-0">
+            <div className="truncate text-base font-black">WL Lunch</div>
+            <div className="truncate text-[11px] text-muted-foreground">今天吃什么</div>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          {nav.map((item) => (
+            <NavLink
+              key={item.key}
+              to={item.to}
+              end={item.end}
+              state={{ fromTab: true }}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors',
+                  isActive ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                )
+              }
+            >
+              <item.icon size={19} strokeWidth={2.2} />
+              <span>{t(settings.lang, item.key)}</span>
+            </NavLink>
+          ))}
+        </div>
+        <div className="mt-auto px-2 text-[11px] leading-relaxed text-muted-foreground/70">
+          今天也要好好吃饭
+        </div>
+      </aside>
+
       {/* 微信风格新消息弹窗：从顶部滑入，点头像/卡片跳转对应页面 */}
       {toast && (() => {
         const meta: Record<string, { icon: string; title: string; color: string }> = {
@@ -367,14 +404,14 @@ export default function AppShell() {
         );
       })()}
 
-      <main ref={mainRef} className={cn('relative flex-1 overflow-y-auto', !hideBottomNav && 'pb-40')}>
-        <div key={location.pathname} className={cn(pageAnimClass, hideBottomNav && 'h-full')}>
+      <main ref={mainRef} className={cn('app-main relative min-h-0 flex-1 overflow-y-auto', !hideBottomNav && 'pb-40')}>
+        <div key={location.pathname} className={cn('app-page-wrap h-full', pageAnimClass)}>
           <Outlet />
         </div>
       </main>
 
       {/* 下滑浮标：左上角返回上一级 + 回到顶部，与下滑深度联动 */}
-      <div className={cn('pointer-events-none absolute inset-x-0 bottom-24 z-[250] flex justify-between px-4 transition-all duration-300', showFloatBtns ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3')}>
+      <div className={cn('app-float-btns pointer-events-none absolute inset-x-0 bottom-24 z-[250] flex justify-between px-4 transition-all duration-300', showFloatBtns ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3')}>
         <button
           type="button"
           aria-label="返回上一级"
@@ -402,16 +439,16 @@ export default function AppShell() {
       </div>
 
       {/* 顶部高斯模糊渐变（限制在手机卡片内） */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[250] h-10 backdrop-blur-[2px]" style={{ maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)' }} />
+      <div className="app-edge-blur pointer-events-none absolute inset-x-0 top-0 z-[250] h-10 backdrop-blur-[2px]" style={{ maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)' }} />
       {/* 底部高斯模糊渐变（限制在手机卡片内） */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[250] h-10 backdrop-blur-[2px]" style={{ maskImage: 'linear-gradient(to top, black, transparent)', WebkitMaskImage: 'linear-gradient(to top, black, transparent)' }} />
+      <div className="app-edge-blur pointer-events-none absolute inset-x-0 bottom-0 z-[250] h-10 backdrop-blur-[2px]" style={{ maskImage: 'linear-gradient(to top, black, transparent)', WebkitMaskImage: 'linear-gradient(to top, black, transparent)' }} />
 
       {/* 液态玻璃浮窗底栏：扁长药丸（进入聊天会话时隐藏，让输入框贴底） */}
       {!hideBottomNav && (<>
       <nav
         style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
         className={cn(
-          'absolute left-1/2 z-[300] flex w-[92%] max-w-[420px] -translate-x-1/2 items-center justify-between gap-1 rounded-full p-1.5',
+          'app-bottom-nav absolute left-1/2 z-[300] flex w-[92%] max-w-[420px] -translate-x-1/2 items-center justify-between gap-1 rounded-full p-1.5',
           'shadow-lg ring-1 ring-black/10 backdrop-blur-xl',
           settings.frosted ? 'card-glass' : 'card-solid',
         )}
@@ -458,7 +495,7 @@ export default function AppShell() {
 
       {/* 底栏上方浅渐变融合 */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-20"
+        className="app-bottom-fade pointer-events-none absolute inset-x-0 bottom-0 z-20 h-20"
         style={{
           background: 'linear-gradient(to top, color-mix(in oklab, var(--card) 60%, transparent), transparent)',
         }}

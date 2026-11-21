@@ -304,7 +304,7 @@ export default function HomePage() {
       </div>
 
       {/* 两个领奖台 */}
-      <div className="flex-1 overflow-y-auto pb-4">
+      <div className="grid flex-1 content-start gap-4 overflow-y-auto pb-4 lg:grid-cols-2">
         <PodiumBlock title={t(settings.lang, 'lovedTop3')} list={loves} good lang={settings.lang} onOpen={(id) => navigate(`/dishes/${id}`)} />
         <PodiumBlock title={t(settings.lang, 'hatedTop3')} list={hates} good={false} lang={settings.lang} onOpen={(id) => navigate(`/dishes/${id}`)} />
       </div>
