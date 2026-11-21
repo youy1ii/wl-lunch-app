@@ -141,7 +141,7 @@ export default function HomePage() {
   const unread = notifications.filter((n) => !n.read).length;
 
   return (
-    <div className="flex h-full flex-col p-5">
+    <div className="h-full overflow-y-auto p-5">
       {/* 顶栏：标题 + 通知铃 */}
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-black tracking-tight">
@@ -304,7 +304,7 @@ export default function HomePage() {
       </div>
 
       {/* 两个领奖台 */}
-      <div className="flex-1 overflow-y-auto pb-4">
+      <div className="pb-4">
         <PodiumBlock title={t(settings.lang, 'lovedTop3')} list={loves} good lang={settings.lang} onOpen={(id) => navigate(`/dishes/${id}`)} />
         <PodiumBlock title={t(settings.lang, 'hatedTop3')} list={hates} good={false} lang={settings.lang} onOpen={(id) => navigate(`/dishes/${id}`)} />
       </div>
