@@ -185,6 +185,8 @@ export default function DishDetailPage() {
               const displayName = prof?.nickname || r.author;
               const displayAvatar = prof?.avatar || '';
               const avatarIsImg = displayAvatar.startsWith('data:') || displayAvatar.startsWith('http');
+              // 楼中楼回复作者也按 uid 取最新昵称，避免改昵称后仍显示旧快照
+              const replyName = (rep: { author: string; authorUid?: string }) => getProfile(rep.authorUid)?.nickname || rep.author;
               return (
                 <div
                   key={r.id}
@@ -295,7 +297,7 @@ export default function DishDetailPage() {
                     <div className="mt-2 space-y-1.5 rounded-lg bg-muted/40 p-2">
                       {preview.map((rep) => (
                         <p key={rep.id} className="text-xs leading-relaxed text-muted-foreground">
-                          <b className="text-foreground">{rep.author}</b>：{rep.text}
+                          <b className="text-foreground">{replyName(rep)}</b>：{rep.text}
                         </p>
                       ))}
                       {!expanded && rest.length > 0 && (
@@ -311,7 +313,7 @@ export default function DishDetailPage() {
                         <>
                           {rest.map((rep) => (
                             <p key={rep.id} className="text-xs leading-relaxed text-muted-foreground">
-                              <b className="text-foreground">{rep.author}</b>：{rep.text}
+                              <b className="text-foreground">{replyName(rep)}</b>：{rep.text}
                             </p>
                           ))}
                           <button

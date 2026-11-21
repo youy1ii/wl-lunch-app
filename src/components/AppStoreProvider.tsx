@@ -235,10 +235,19 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     setUser(u);
     setPendingLoginName('');
     saveSession(u, false, readIds);
-    supabase.from('users').upsert({
-      uid: u.uid, username: u.username, real_name: u.realName, role: u.role,
-      student_id: u.studentId, klass: u.klass, grade: u.grade,
-    }).then(() => {});
+    (async () => {
+      await supabase.from('users').upsert({
+        uid: u.uid, username: u.username, real_name: u.realName, role: u.role,
+        student_id: u.studentId, klass: u.klass, grade: u.grade, bio: u.bio || '',
+      });
+      // 昵称不在 users 表，注册时就要写进 app_pref，否则其他设备/评论区只能看到真名
+      if (u.nickname) {
+        const { data } = await supabase.from(BUS).select('id,text').eq('kind', K.PREF).eq('author_uid', u.uid!).maybeSingle();
+        const merged = { ...(data ? jparse((data as any).text) : {}), nickname: u.nickname };
+        if (data) await supabase.from(BUS).update({ text: jstr(merged) }).eq('id', (data as any).id);
+        else await supabase.from(BUS).insert({ kind: K.PREF, author_uid: u.uid, author_name: u.username || '', text: jstr(merged) });
+      }
+    })();
   }, [readIds]);
 
   const logout = useCallback(() => {
@@ -285,7 +294,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
         rv.liked = meUid ? ls.some((p) => p.user_uid === meUid) : false;
         rv.replies = replyRows
           .filter((p) => String(p.rating_id) === String(rv.id))
-          .map((p) => ({ id: Number(p.id), author: p.author_name || '同学', text: p.text || '' }))
+          .map((p) => ({ id: Number(p.id), author: p.author_name || '同学', text: p.text || '', authorUid: p.author_uid || undefined }))
           .sort((a, b) => a.id - b.id);
       });
       reviews.sort((a, b) => b.likes - a.likes);
@@ -466,6 +475,14 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
         // 无实质变化则不更新，避免不必要的重渲染/realtime 回环
         const same = next.username === prev.username && next.realName === prev.realName
           && next.bio === prev.bio && next.avatar === prev.avatar && next.nickname === prev.nickname;
+        if (!same) {
+          // 服务端为准刷新后回写本地快照，避免下次启动/切号又用旧资料（跨设备不同步的根因）
+          const admin = next.username === 'WLLC2026' || next.uid === '00000000' || isAdminNow;
+          // 从 session 现取 readIds，避免把 readIds 加进 loadAll 依赖造成回环
+          const curReadIds = loadSession().readIds;
+          saveSession(next, admin, curReadIds);
+          saveAccountToList(next, admin);
+        }
         return same ? prev : next;
       });
     }
@@ -542,17 +559,9 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
       supabase.channel(`rt-${tbl}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: tbl }, () => {
           if (tbl === 'users') {
+            // users 表无 nickname 列，单独读会漏掉 app_pref 里的昵称；统一走 loadAll 刷新
             if (!user?.uid) return;
-            supabase.from('users').select('*').eq('uid', user.uid).then(({ data }) => {
-              if (data && data.length > 0) {
-                const row = data[0] as any;
-                setUser((prev) => prev ? {
-                  ...prev, username: row.username || prev.username,
-                  realName: row.real_name || prev.realName, bio: row.bio || '',
-                  avatar: row.avatar || '', nickname: row.nickname || prev.nickname || '',
-                } : prev);
-              }
-            });
+            loadAll();
           } else if (tbl === 'rating_likes') {
             // 点赞高频，只轻量同步点赞状态，不全量重载（避免延迟和乐观更新被回滚）
             refreshLikes();
@@ -565,18 +574,10 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     return () => channels.forEach((c) => supabase.removeChannel(c));
   }, [loadAll, refreshLikes, user?.uid]);
 
-  // 启动时刷新当前用户资料
+  // 启动时刷新当前用户资料：统一走 loadAll（它会从 users + app_pref 正确组装昵称/签名/头像），
+  // 不再手写 setUser——users 表没有 nickname 列，之前用 row.nickname 会把 app_pref 的昵称覆盖回旧快照。
   useEffect(() => {
-    if (!user?.uid) return;
-    supabase.from('users').select('*').eq('uid', user.uid).then(({ data }) => {
-      if (data && data.length > 0) {
-        const row = data[0] as any;
-        setUser((prev) => prev ? {
-          ...prev, username: row.username || prev.username, realName: row.real_name || prev.realName,
-          bio: row.bio || '', avatar: row.avatar || '', nickname: row.nickname || prev.nickname || '',
-        } : prev);
-      }
-    });
+    if (user?.uid) loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
@@ -649,7 +650,7 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
   const replyReview = useCallback((dishId: number, reviewId: number, text: string) => {
     setDishes((prev) => prev.map((d) => d.id !== dishId ? d : {
       ...d, reviews: d.reviews.map((r) => r.id === reviewId
-        ? { ...r, replies: [...r.replies, { id: Date.now(), author: user?.username || '我', text }] } : r),
+        ? { ...r, replies: [...r.replies, { id: Date.now(), author: user?.username || '我', text, authorUid: user?.uid }] } : r),
     }));
     (async () => {
       // 落库与「查作者uid」并行发起，通知紧跟其后；依赖 realtime 兜底，不再串行 await + 全量 loadAll
@@ -897,8 +898,11 @@ export default function AppStoreProvider({ children }: { children: React.ReactNo
     return Promise.resolve((async () => {
       if (!target) return notify(await supabase.from('users').select('uid').then(({ data }) =>
         (data || []).map((r: any) => r.uid)), 'admin', msg);
-      const { data } = await supabase.from('users').select('uid').eq('username', target);
-      return notify(data?.[0]?.uid ? [data[0].uid] : [target], 'admin', msg);
+      // UI 引导填 UID，先按 uid 精确匹配；兼容填账号名/昵称的情况
+      const byUid = await supabase.from('users').select('uid').eq('uid', target);
+      if (byUid.data && byUid.data.length > 0) return notify([target], 'admin', msg);
+      const byName = await supabase.from('users').select('uid').eq('username', target);
+      return notify(byName.data?.[0]?.uid ? [byName.data[0].uid] : [target], 'admin', msg);
     })());
   }, [notify]);
 

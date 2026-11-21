@@ -3,7 +3,7 @@ import { X, Send, Pin, Megaphone, MoreVertical, Users, UserX, ShieldOff, AtSign,
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/lib/store-context';
 import { t } from '@/lib/i18n';
-import { cn, fmtBJT, parseServerDate } from '@/lib/utils';
+import { cn, fmtBJT, isOwnerMark } from '@/lib/utils';
 
 interface AdminMessage {
   id: number;
@@ -34,8 +34,8 @@ function AuthorAvatar({ name, avatar, isOwner, size = 'sm' }: { name: string; av
     : 'bg-amber-500/80 text-white ring-2 ring-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.3)]';
   return (
     <div className={cn('flex shrink-0 items-center justify-center overflow-hidden rounded-full font-black', dim, ring)}>
-      {avatar?.startsWith('data:') ? (
-        <img src={avatar} alt="" className="h-full w-full object-cover" />
+      {avatar && /^(data:|https?:|\/)/i.test(avatar) ? (
+        <img src={avatar} alt="" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
       ) : (
         avatar || name.slice(0, 1).toUpperCase()
       )}
@@ -44,7 +44,7 @@ function AuthorAvatar({ name, avatar, isOwner, size = 'sm' }: { name: string; av
 }
 
 export default function AdminGroupChat({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { user, isAdmin, settings, notifyGroup, setHideBottomNav } = useApp();
+  const { user, isAdmin, settings, notifyGroup, setHideBottomNav, getProfile } = useApp();
   const lang = settings.lang;
   const [messages, setMessages] = useState<AdminMessage[]>([]);
   const [members, setMembers] = useState<AdminMember[]>([]);
@@ -56,14 +56,13 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
   const [announceText, setAnnounceText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const isOwner = user?.uid === OWNER_UID || user?.username === 'WLLC2026';
-  // 每次打开群聊只显示本次打开后新收到的消息：记录打开时刻，关闭时清零。
-  const sessionStartRef = useRef<number>(0);
 
-  // 群聊里的名字/头像是实时资料，不用消息发送时的快照（否则改了昵称头像后历史消息不同步）
+  // 群聊里的名字/头像统一从 getProfile 取最新资料（uid → users + app_pref），
+  // 与公告/评论区同一数据源；members 只用来判断管理员身份/封禁，不再负责昵称显示。
   function resolveAuthor(uid: string, fallbackName: string) {
-    if (uid === user?.uid) {
-      return { name: user.nickname || user.realName || user.username || fallbackName, avatar: user.avatar };
-    }
+    const prof = getProfile(uid);
+    if (prof) return { name: prof.nickname || prof.realName || prof.username || fallbackName, avatar: prof.avatar };
+    // getProfile 暂无数据时（如刚打开还没 loadAll），退回 members 表
     const m = members.find((x) => x.uid === uid);
     if (m) return { name: m.nickname || m.real_name || m.username || fallbackName, avatar: m.avatar };
     return { name: fallbackName, avatar: undefined };
@@ -72,32 +71,26 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
   useEffect(() => {
     if (!open || !isAdmin) return;
     setHideBottomNav(true); // 群聊打开时隐藏底栏，避免遮挡输入框
-    // 每次打开都是全新的聊天窗口：以打开时刻为界，只显示之后的新消息。
-    sessionStartRef.current = Date.now();
-    setMessages([]);
     load();
     loadMembers();
     const ch = supabase
       .channel('admin-messages')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'admin_messages' }, () => load())
       .subscribe();
-    return () => { supabase.removeChannel(ch); sessionStartRef.current = 0; setHideBottomNav(false); };
+    return () => { supabase.removeChannel(ch); setHideBottomNav(false); };
   }, [open, isAdmin, setHideBottomNav]);
 
   async function load() {
     // 只取群聊相关的 kind。app_ 前缀是全局共享数据总线（反馈/通知/公告等），不进群聊。
+    // 取最近 100 条历史（按时间倒序再翻转），打开就能看到之前的消息，不再"每次打开清空"。
     const { data } = await supabase
       .from('admin_messages')
       .select('*')
       .in('kind', ['message', 'announcement', 'mention', 'activity'])
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false })
+      .limit(100);
     if (!data) return;
-    const start = sessionStartRef.current;
-    // 打开时刻之前的历史一律不显示（含置顶公告），实现"每次打开清空"。
-    const fresh = start
-      ? (data as AdminMessage[]).filter((m) => parseServerDate(m.created_at).getTime() >= start - 1000)
-      : [];
-    setMessages(fresh);
+    setMessages((data as AdminMessage[]).reverse());
   }
 
   async function loadMembers() {
@@ -205,7 +198,7 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
             <div>
               <div className="text-sm font-black">管理员群</div>
               <div className="text-[10px] text-muted-foreground">
-                群主: {ownerMember?.nickname || ownerMember?.real_name || ownerMember?.username || 'WLLC2026'} · {members.length}人
+                群主: {ownerMember ? resolveAuthor(ownerMember.uid, ownerMember.username).name : 'WLLC2026'} · {members.length}人
               </div>
             </div>
           </div>
@@ -279,18 +272,18 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
                 <button
                   key={m.uid}
                   type="button"
-                  onClick={() => { if (isOwner && m.uid !== OWNER_UID) setManageTarget(m); else setShowMembers(false); }}
+                  onClick={() => { if (isOwner && !isOwnerMark(m.uid)) setManageTarget(m); else setShowMembers(false); }}
                   className="pressable flex w-full items-center gap-3 rounded-xl p-2.5 text-left hover:bg-muted"
                 >
-                  <AuthorAvatar name={m.nickname || m.real_name || m.username} avatar={m.avatar} isOwner={m.uid === OWNER_UID} size="md" />
+                  <AuthorAvatar name={resolveAuthor(m.uid, m.username).name} avatar={resolveAuthor(m.uid, m.username).avatar} isOwner={isOwnerMark(m.uid)} size="md" />
                   <div className="flex-1">
                     <div className="flex items-center gap-1 text-sm font-bold">
-                      {m.nickname || m.real_name || m.username}
-                      {m.uid === OWNER_UID && <span className="rounded-md bg-emerald-500 px-1.5 py-0.5 text-[9px] font-black text-white">总管理员</span>}
+                      {resolveAuthor(m.uid, m.username).name}
+                      {isOwnerMark(m.uid) && <span className="rounded-md bg-emerald-500 px-1.5 py-0.5 text-[9px] font-black text-white">总管理员</span>}
                     </div>
                     <div className="text-[10px] text-muted-foreground">UID: {m.uid}</div>
                   </div>
-                  {isOwner && m.uid !== OWNER_UID && <ChevronRightIcon />}
+                  {isOwner && !isOwnerMark(m.uid) && <ChevronRightIcon />}
                 </button>
               ))}
             </div>
@@ -311,19 +304,19 @@ export default function AdminGroupChat({ open, onClose }: { open: boolean; onClo
                   type="button"
                   onClick={() => {
                     const target = members.find((mm) => mm.uid === m.author_uid);
-                    if (isOwner && target && m.author_uid !== OWNER_UID) setManageTarget(target);
+                    if (isOwner && target && !isOwnerMark(m.author_uid)) setManageTarget(target);
                   }}
                 >
-                  <AuthorAvatar name={author.name} avatar={author.avatar} isOwner={m.author_uid === OWNER_UID} />
+                  <AuthorAvatar name={author.name} avatar={author.avatar} isOwner={isOwnerMark(m.author_uid)} />
                 </button>
                 <div className={cn('max-w-[75%]', mine && 'text-right')}>
                   <div className="mb-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground" style={{ justifyContent: mine ? 'flex-end' : 'flex-start' }}>
-                    <span className="font-bold" style={{ color: m.author_uid === OWNER_UID ? 'var(--primary)' : undefined }}>
+                    <span className="font-bold" style={{ color: isOwnerMark(m.author_uid) ? 'var(--primary)' : undefined }}>
                       {author.name}
-                      {m.author_uid === OWNER_UID && <span className="ml-1 rounded-md bg-emerald-500 px-1 py-0.5 text-[8px] font-black text-white">总管理员</span>}
+                      {isOwnerMark(m.author_uid) && <span className="ml-1 rounded-md bg-emerald-500 px-1 py-0.5 text-[8px] font-black text-white">总管理员</span>}
                     </span>
                     <span>{fmtBJT(m.created_at)}</span>
-                    {isOwner && m.author_uid !== OWNER_UID && (
+                    {isOwner && !isOwnerMark(m.author_uid) && (
                       <button
                         type="button"
                         onClick={() => togglePin(m.id, m.pinned)}

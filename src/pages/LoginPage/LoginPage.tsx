@@ -62,6 +62,7 @@ export default function LoginPage() {
     }
     const u: IUser = {
       username: account.trim() || nickname.trim(),
+      nickname: nickname.trim(),
       realName: realName.trim(),
       role: finalRole,
       studentId: finalRole === 'student' ? studentId : undefined,

@@ -7,6 +7,7 @@ export interface IReply {
   id: number;
   author: string;
   text: string;
+  authorUid?: string;
 }
 
 export interface IReview {

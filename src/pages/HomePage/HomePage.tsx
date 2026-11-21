@@ -202,7 +202,7 @@ export default function HomePage() {
                   {grp.label}
                 </div>
                 {list.map((n) => (
-                  <div key={n.id} className="pressable rounded-b-lg px-2 py-2 text-xs leading-relaxed hover:bg-muted" onClick={() => { if (n.kind === 'feedback') { setEmailDetail(n); markAllNotificationsRead(); } }}>
+                  <div key={n.id} className="pressable rounded-b-lg px-2 py-2 text-xs leading-relaxed hover:bg-muted" onClick={() => { if (n.kind === 'feedback') setEmailDetail(n); else if (n.kind === 'admin') navigate('/announcements'); else if (n.kind === 'reply') navigate('/me'); setShowNotif(false); markAllNotificationsRead(); }}>
                     <div className="text-muted-foreground">{shortTime(n.time)}</div>
                     <div className="mt-0.5 break-words">{n.text}</div>
                   </div>
